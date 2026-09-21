@@ -32,10 +32,16 @@ final class SessionEngine {
     private(set) var lastFinished: Session?
 
     var targetSeconds: Int = 25 * 60
-    var graceSeconds: Int = 10
+
+    /// Read from preferences each time a block is released, so a change in
+    /// Settings applies to the next interruption rather than the next launch.
+    var graceSeconds: Int { Prefs.graceSeconds }
 
     private var context: ModelContext?
     private var lastPosture: HingeMonitor.Posture = .open
+    /// When the user released mid-block. A broken or abandoned block ended
+    /// here, not when the grace period ran out afterwards.
+    private var releasedAt: Date?
 
     func configure(context: ModelContext) {
         self.context = context
@@ -71,6 +77,7 @@ final class SessionEngine {
         targetSeconds = target
         startedAt = nil
         graceEndsAt = nil
+        releasedAt = nil
         interruptions = 0
         lastFinished = nil
         phase = .armed
@@ -81,6 +88,7 @@ final class SessionEngine {
         phase = .idle
         startedAt = nil
         graceEndsAt = nil
+        releasedAt = nil
     }
 
     /// The user chose to end the block early, from the interrupt screen.
@@ -93,6 +101,7 @@ final class SessionEngine {
         phase = .idle
         startedAt = nil
         graceEndsAt = nil
+        releasedAt = nil
         lastFinished = nil
     }
 
@@ -105,15 +114,23 @@ final class SessionEngine {
         defer { lastPosture = posture }
         guard posture != lastPosture else { return }
 
+        // Settle a block that already reached its target before reading the new
+        // posture. No tick ran while the phone was shut — the process was
+        // suspended — so without this, opening the phone on a block that
+        // finished an hour ago reads as an interruption and breaks it.
+        tick()
+
         switch (phase, posture.isCommitted) {
         case (.armed, true):
             start()
         case (.running, false):
             interruptions += 1
+            releasedAt = .now
             graceEndsAt = .now.addingTimeInterval(Double(graceSeconds))
             phase = .grace
         case (.grace, true):
             graceEndsAt = nil
+            releasedAt = nil
             phase = .running
         default:
             break
@@ -153,10 +170,17 @@ final class SessionEngine {
 
         let session = Session(startedAt: startedAt, targetSeconds: targetSeconds)
         // A completed block ends at its target, not at the moment the user
-        // happened to open the phone afterwards.
-        session.endedAt = outcome == .completed && targetSeconds > 0
-            ? startedAt.addingTimeInterval(Double(targetSeconds))
-            : .now
+        // happened to open the phone afterwards; a broken one ends when they
+        // opened it, not when the grace period ran out.
+        let endedAt: Date = switch outcome {
+        case .completed where targetSeconds > 0:
+            startedAt.addingTimeInterval(Double(targetSeconds))
+        case .completed:
+            Date.now
+        case .broken, .abandoned:
+            releasedAt ?? Date.now
+        }
+        session.endedAt = endedAt
         session.outcome = outcome
         session.interruptions = interruptions
 
@@ -167,6 +191,7 @@ final class SessionEngine {
         phase = outcome == .completed ? .complete : .broken
         self.startedAt = nil
         graceEndsAt = nil
+        releasedAt = nil
     }
 
     // MARK: - Notifications
@@ -178,7 +203,7 @@ final class SessionEngine {
         let content = UNMutableNotificationContent()
         content.title = "Done."
         content.body = "\(targetSeconds / 60) minutes. You can open it."
-        content.sound = .default
+        content.sound = Prefs.soundOnFinish ? .default : nil
         content.interruptionLevel = .timeSensitive
 
         let trigger = UNTimeIntervalNotificationTrigger(

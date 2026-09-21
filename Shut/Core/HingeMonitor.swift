@@ -70,12 +70,19 @@ final class HingeMonitor {
     /// On a foldable this is ignored: folding the phone shut moves the app to
     /// the outer display rather than backgrounding it, so scene phase is not a
     /// reliable proxy for the hinge and would fight `ingestHinge`.
+    ///
+    /// `.inactive` is deliberately not treated as committed. Locking the screen
+    /// backgrounds the app, so `.background` is the signal we want; `.inactive`
+    /// alone is Control Centre, the app switcher or an incoming call, and
+    /// reading those as a fold would start blocks the user never started and
+    /// break ones they never opened.
     func ingestScenePhase(_ phase: ScenePhase) {
         guard !isFoldable else { return }
         switch phase {
-        case .active:               posture = .open
-        case .inactive, .background: posture = .closed
-        @unknown default:           posture = .open
+        case .active:     posture = .open
+        case .background: posture = .closed
+        case .inactive:   break
+        @unknown default: break
         }
     }
 }

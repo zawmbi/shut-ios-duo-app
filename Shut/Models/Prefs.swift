@@ -4,9 +4,31 @@ import SwiftUI
 enum PrefKey {
     static let graceSeconds  = "grace.seconds"
     static let lastTarget    = "target.last"
+    static let customTarget  = "target.custom"
     static let faceStyle     = "face.style"
     static let soundOnFinish = "finish.sound"
     static let hasOnboarded  = "onboarded"
+}
+
+/// Reads the same defaults the `@AppStorage` views write, for the types that
+/// aren't views and can't use it. Every accessor states its own default, so an
+/// unset key and a zero-valued key can't be confused.
+enum Prefs {
+    static let defaultGraceSeconds = 10
+    static let graceRange = 3...60
+
+    static var graceSeconds: Int {
+        let stored = UserDefaults.standard.integer(forKey: PrefKey.graceSeconds)
+        guard stored != 0 else { return defaultGraceSeconds }
+        return min(graceRange.upperBound, max(graceRange.lowerBound, stored))
+    }
+
+    static var soundOnFinish: Bool {
+        guard UserDefaults.standard.object(forKey: PrefKey.soundOnFinish) != nil else {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: PrefKey.soundOnFinish)
+    }
 }
 
 enum FaceStyle: String, CaseIterable, Identifiable {
