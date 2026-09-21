@@ -26,7 +26,7 @@ final class Entitlements {
         }
     }
 
-    deinit { updates?.cancel() }
+    isolated deinit { updates?.cancel() }
 
     var priceText: String { product?.displayPrice ?? "$4.99" }
 

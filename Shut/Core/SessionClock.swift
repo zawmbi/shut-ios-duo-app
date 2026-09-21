@@ -27,5 +27,5 @@ final class SessionClock {
         task = nil
     }
 
-    deinit { task?.cancel() }
+    isolated deinit { task?.cancel() }
 }
