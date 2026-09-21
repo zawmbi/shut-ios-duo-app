@@ -36,6 +36,15 @@ Still needs a Mac, in this order:
 4. ~~A test target to replace `Tools/logic-check/`.~~ Done 2026-09-20: `ShutTests`.
 5. App icon, screenshots, metadata, archive, submit.
 
+**The launch positioning below assumes a Duo build can ship before Oct 16. It
+cannot.** Xcode 27.1 is a beta as of 2026-09-18, App Store submissions take
+Xcode 27 RC / iOS 27.0 SDK, and App Store Connect does not accept iPhone Duo
+assets yet. The toolchain table is in `HANDOFF.md`. The plan splits in two at no
+cost, since the universal-build rule already required both halves to work:
+**v1.0 now** with `DUO_SDK` off, archived on Xcode 27.0 release, live before
+pre-orders; **v1.1** with the hinge, the Duo screenshots and the featuring
+nomination, once 27.1 is final.
+
 ---
 
 ## Milestone 0 — the spike (first hour, before anything else)
