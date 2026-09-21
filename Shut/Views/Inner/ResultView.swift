@@ -21,9 +21,9 @@ struct ResultView: View {
                 .font(.system(size: 64, weight: .heavy, design: .rounded))
                 .foregroundStyle(kept ? Theme.green : Theme.ink)
                 .padding(.top, 4)
-                .accessibilityLabel(
-                    "\(kept ? "Kept" : "Broken"). \(Stats.spoken(session?.elapsed ?? 0))."
-                )
+                // The "Kept"/"Broken" line above already says the outcome, so
+                // this reads only the duration and VoiceOver doesn't say it twice.
+                .accessibilityLabel(Stats.spoken(session?.elapsed ?? 0))
 
             if let session, session.interruptions > 0 {
                 Text(session.interruptions == 1

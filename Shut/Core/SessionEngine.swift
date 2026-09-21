@@ -203,7 +203,7 @@ final class SessionEngine {
         let content = UNMutableNotificationContent()
         content.title = "Done."
         content.body = "\(targetSeconds / 60) minutes. You can open it."
-        content.sound = Prefs.soundOnFinish ? .default : nil
+        content.sound = Prefs.soundOnFinish ? UNNotificationSound.default : nil
         content.interruptionLevel = .timeSensitive
 
         let trigger = UNTimeIntervalNotificationTrigger(

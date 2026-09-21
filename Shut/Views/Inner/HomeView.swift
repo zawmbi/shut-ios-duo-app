@@ -96,7 +96,18 @@ struct HomeView: View {
             }
         }
         .buttonStyle(.plain)
+        // The button's own label would otherwise replace the two figures
+        // inside it, so VoiceOver would announce "History" and nothing else.
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("History")
+        .accessibilityValue(spokenStats)
+    }
+
+    private var spokenStats: String {
+        let streak = Stats.streak(sessions)
+        let today = Stats.todayTotal(sessions)
+        let todayPart = today > 0 ? "today \(Stats.spoken(today))" : "nothing today"
+        return "\(todayPart), streak \(streak) day\(streak == 1 ? "" : "s")"
     }
 
     private func stat(_ label: String, _ value: String) -> some View {
