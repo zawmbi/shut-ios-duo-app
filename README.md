@@ -8,11 +8,23 @@ backend, no analytics, no network calls except StoreKit's.
 ## Getting started
 
 ```
-open Shut.xcodeproj      # create the project in Xcode, add Shut/ as the target's sources
+open Shut.xcodeproj
 ```
 
-The app builds and runs today on any iPhone as a lock-to-focus timer. The iPhone
-Duo path is behind a compile flag:
+The project is committed. `Shut/` is a file-system-synchronized group, so a file
+added to the tree joins the target without a project edit. The shared scheme
+already points its StoreKit configuration at `Products.storekit`, so buy and
+restore work in the simulator with no App Store Connect round trip — if Xcode
+reports the configuration missing, re-pick it in Scheme ▸ Run ▸ Options ▸
+StoreKit Configuration.
+
+> **Nothing here has been compiled.** The project file and every change made
+> after the source tree first landed were written without a Mac in reach, so the
+> Swift is unverified and the first build should be expected to need fixing.
+> `Tools/logic-check/` is what stands in for tests until then.
+
+The app is meant to build and run on any iPhone as a lock-to-focus timer. The
+iPhone Duo path is behind a compile flag:
 
 **Build Settings ▸ Swift Compiler - Custom Flags ▸ Other Swift Flags ▸ `-D DUO_SDK`**
 

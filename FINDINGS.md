@@ -4,6 +4,14 @@ Fill this in during Milestone 0. Everything below is an open question that the
 source tree currently guesses at. Nothing else should be built until these are
 answered.
 
+> **Status: every question below is still open.** They need Xcode 27.1, the
+> iPhone Duo simulator and the SDK headers — a Mac, in other words — and none of
+> that was available to the work done so far. **Nothing in this tree has been
+> through a compiler.** Treat it as unverified Swift until it builds once, and
+> treat `Core/HingeBridge.swift` and the outer-display scene in
+> `App/ShutApp.swift` as guesses until this file is filled in. `-D DUO_SDK` is
+> deliberately **not** set in the Xcode project for that reason.
+
 ## 1. `onHingeChange` — real signature
 
 - [ ] What type does the closure receive?

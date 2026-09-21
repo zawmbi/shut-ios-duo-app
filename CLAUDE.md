@@ -192,9 +192,13 @@ One non-consumable, `xyz.zawmbi.shut.pro`, $4.99, StoreKit 2.
 **Free, forever, genuinely useful:** unlimited sessions, any preset duration,
 today's total, current streak, the outer-display timer face.
 
-**Pro:** full history beyond today, week and month charts, session labels,
-custom durations, alternate timer faces, adjustable grace period, iCloud sync
-via SwiftData's CloudKit container.
+**Pro:** full history beyond today, week and month totals, session labels,
+custom durations, alternate timer faces, adjustable grace period.
+
+iCloud sync is **cut, not deferred.** SwiftData's CloudKit container is a
+network call, and "nothing leaves your phone" is the product — both claims
+cannot be on the same page. It was never promised in the paywall or the store
+copy, so nothing user-facing changes. See `DEFERRED.md`.
 
 The paywall appears in exactly two places: tapping History, and a single row in
 Settings. It never interrupts a session, never appears on launch, and never

@@ -5,6 +5,39 @@ and what has to be true before you submit.
 
 ---
 
+## Status
+
+Work done so far was done **without a Mac**: nothing in the tree has been
+compiled or run on a simulator, and every question in `FINDINGS.md` is still
+open. Milestone 0 is unchanged and still first.
+
+Done:
+
+- The source tree, plus an Xcode project — single app target, iOS 26.0, Swift 6,
+  `Shut/` as a file-system-synchronized group, shared scheme wired to
+  `Products.storekit`. Structurally validated, never opened in Xcode.
+- **Day 2, hour 4.** Every paywall claim now matches the binary. Custom lengths,
+  week and month totals, labels and the face picker were built; iCloud sync was
+  cut. Four of the six claims had nothing behind them, including two this plan
+  did not flag: the face picker did not exist, and the grace-period stepper in
+  Settings never reached the engine.
+- **Day 2, hour 5.** The accessibility pass — VoiceOver labels, Dynamic Type,
+  reduce-motion.
+- Three engine bugs. The worst recorded a finished block as *Broken* when the
+  user opened the phone.
+- **Day 1, hour 7's** streak check across a midnight boundary, run against
+  `Tools/logic-check/` rather than a simulator.
+
+Still needs a Mac, in this order:
+
+1. **Milestone 0.** Unchanged, and still the first hour.
+2. First clean build on the plain-iPhone path, `DUO_SDK` off.
+3. StoreKit in the simulator: buy, restore, and each Pro gate.
+4. An XCTest target to replace `Tools/logic-check/`.
+5. App icon, screenshots, metadata, archive, submit.
+
+---
+
 ## Milestone 0 — the spike (first hour, before anything else)
 
 **Do not skip this and do not do it second.** Two files in the tree guess at
