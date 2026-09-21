@@ -33,6 +33,13 @@ final class SessionEngine {
 
     var targetSeconds: Int = 25 * 60
 
+    /// The clock, as a seam. Production reads the wall clock; tests substitute a
+    /// fake so the engine can be driven across hours without waiting for them.
+    /// Every date the engine stores or compares comes through here — if a new
+    /// `Date.now` appears anywhere below, that is a bug, not a shortcut.
+    @ObservationIgnored
+    var now: @MainActor () -> Date = { .now }
+
     /// Read from preferences each time a block is released, so a change in
     /// Settings applies to the next interruption rather than the next launch.
     var graceSeconds: Int { Prefs.graceSeconds }
@@ -53,7 +60,7 @@ final class SessionEngine {
 
     var elapsed: TimeInterval {
         guard let startedAt else { return 0 }
-        return max(0, Date.now.timeIntervalSince(startedAt))
+        return max(0, now().timeIntervalSince(startedAt))
     }
 
     var remaining: TimeInterval? {
@@ -68,7 +75,7 @@ final class SessionEngine {
 
     var graceRemaining: TimeInterval {
         guard let graceEndsAt else { return 0 }
-        return max(0, graceEndsAt.timeIntervalSince(.now))
+        return max(0, graceEndsAt.timeIntervalSince(now()))
     }
 
     // MARK: - Intents
@@ -125,8 +132,8 @@ final class SessionEngine {
             start()
         case (.running, false):
             interruptions += 1
-            releasedAt = .now
-            graceEndsAt = .now.addingTimeInterval(Double(graceSeconds))
+            releasedAt = now()
+            graceEndsAt = now().addingTimeInterval(Double(graceSeconds))
             phase = .grace
         case (.grace, true):
             graceEndsAt = nil
@@ -156,7 +163,7 @@ final class SessionEngine {
     // MARK: - Transitions
 
     private func start() {
-        startedAt = .now
+        startedAt = now()
         phase = .running
         scheduleNotification()
     }
@@ -176,9 +183,9 @@ final class SessionEngine {
         case .completed where targetSeconds > 0:
             startedAt.addingTimeInterval(Double(targetSeconds))
         case .completed:
-            Date.now
+            now()
         case .broken, .abandoned:
-            releasedAt ?? Date.now
+            releasedAt ?? now()
         }
         session.endedAt = endedAt
         session.outcome = outcome

@@ -14,6 +14,7 @@
 		5A0000000000000000000005 /* BUILD.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BUILD.md; sourceTree = "<group>"; };
 		5A0000000000000000000006 /* FINDINGS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FINDINGS.md; sourceTree = "<group>"; };
 		5A0000000000000000000007 /* DEFERRED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DEFERRED.md; sourceTree = "<group>"; };
+		5A0000000000000000000008 /* ShutTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -22,10 +23,22 @@
 			path = Shut;
 			sourceTree = "<group>";
 		};
+		5A0000000000000000000011 /* ShutTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ShutTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		5A0000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A0000000000000000000021 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -39,6 +52,7 @@
 			isa = PBXGroup;
 			children = (
 				5A0000000000000000000010 /* Shut */,
+				5A0000000000000000000011 /* ShutTests */,
 				5A0000000000000000000002 /* Products.storekit */,
 				5A0000000000000000000031 /* Docs */,
 				5A0000000000000000000032 /* Products */,
@@ -61,6 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				5A0000000000000000000001 /* Shut.app */,
+				5A0000000000000000000008 /* ShutTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -90,7 +105,47 @@
 			productReference = 5A0000000000000000000001 /* Shut.app */;
 			productType = "com.apple.product-type.application";
 		};
+		5A0000000000000000000044 /* ShutTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5A0000000000000000000062 /* Build configuration list for PBXNativeTarget "ShutTests" */;
+			buildPhases = (
+				5A0000000000000000000043 /* Sources */,
+				5A0000000000000000000021 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5A0000000000000000000046 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				5A0000000000000000000011 /* ShutTests */,
+			);
+			name = ShutTests;
+			packageProductDependencies = (
+			);
+			productName = ShutTests;
+			productReference = 5A0000000000000000000008 /* ShutTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		5A0000000000000000000045 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5A0000000000000000000050 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5A0000000000000000000040;
+			remoteInfo = Shut;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		5A0000000000000000000046 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5A0000000000000000000040 /* Shut */;
+			targetProxy = 5A0000000000000000000045 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		5A0000000000000000000050 /* Project object */ = {
@@ -102,6 +157,10 @@
 				TargetAttributes = {
 					5A0000000000000000000040 = {
 						CreatedOnToolsVersion = 27.1;
+					};
+					5A0000000000000000000044 = {
+						CreatedOnToolsVersion = 27.1;
+						TestTargetID = 5A0000000000000000000040;
 					};
 				};
 			};
@@ -120,6 +179,7 @@
 			projectRoot = "";
 			targets = (
 				5A0000000000000000000040 /* Shut */,
+				5A0000000000000000000044 /* ShutTests */,
 			);
 		};
 /* End PBXProject section */
@@ -136,6 +196,13 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		5A0000000000000000000041 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A0000000000000000000043 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -314,6 +381,40 @@
 			};
 			name = Release;
 		};
+		5A0000000000000000000074 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.zawmbi.shut.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Shut.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shut";
+			};
+			name = Debug;
+		};
+		5A0000000000000000000075 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.zawmbi.shut.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Shut.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shut";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -331,6 +432,15 @@
 			buildConfigurations = (
 				5A0000000000000000000072 /* Debug */,
 				5A0000000000000000000073 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5A0000000000000000000062 /* Build configuration list for PBXNativeTarget "ShutTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A0000000000000000000074 /* Debug */,
+				5A0000000000000000000075 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
