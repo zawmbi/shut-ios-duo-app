@@ -18,10 +18,10 @@ restore work in the simulator with no App Store Connect round trip — if Xcode
 reports the configuration missing, re-pick it in Scheme ▸ Run ▸ Options ▸
 StoreKit Configuration.
 
-> **Nothing here has been compiled.** The project file and every change made
-> after the source tree first landed were written without a Mac in reach, so the
-> Swift is unverified and the first build should be expected to need fixing.
-> `Tools/logic-check/` is what stands in for tests until then.
+> **The Duo path has never run.** The app compiles and its logic is covered by
+> `ShutTests`, but everything behind `-D DUO_SDK` is still unverified: it needs
+> Xcode 27.1 and the iPhone Duo simulator, neither of which the tree has been
+> near. See `FINDINGS.md`.
 
 The app is meant to build and run on any iPhone as a lock-to-focus timer. The
 iPhone Duo path is behind a compile flag:

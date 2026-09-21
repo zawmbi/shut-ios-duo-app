@@ -4,13 +4,11 @@ Things deliberately cut from v1. Add to this list rather than expanding scope.
 
 **Still owed, and why each one isn't done:**
 
-- **A test target.** `Stats` and `SessionEngine` are pure and take an injectable
-  date, which is what makes them testable — but there is no XCTest target,
-  because adding one means editing the project on a Mac. The logic was verified
-  another way in the meantime: `Tools/logic-check/` ports both types line for
-  line and runs the day-boundary and state-machine cases, including BUILD.md's
-  end-of-day-1 test. It is a stand-in, not a substitute — it proves the
-  algorithm, never the Swift. Port it to XCTest and delete it.
+- ~~**A test target.**~~ Done on 2026-09-20. `ShutTests` runs the same cases
+  against the Swift, and the Python stand-in it replaced has been deleted. Note
+  that `SessionEngine` did *not* take an injectable date as this file once
+  claimed — it read `Date.now` directly in six places, and testing it at all
+  meant giving it a clock seam. `Stats` really was injectable.
 - **Milestone 0.** Still entirely open; see `FINDINGS.md`. Nothing in this tree
   has been compiled.
 

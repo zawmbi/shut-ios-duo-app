@@ -58,7 +58,33 @@ redundant `MainActor.run`, the `switch` expression in `SessionEngine.finish(as:)
 scheme, and `GeometryProxy.reservedRegions` behind the flag — all compiled clean
 and need no action.
 
-`Tools/logic-check/` still passes, 55 cases, both suites.
+`Tools/logic-check/` still passed at this point, 55 cases, both suites.
+
+### Test target, 2026-09-20
+
+`Tools/logic-check/` is gone, replaced by `ShutTests` — 45 tests, 57 assertions,
+green on the iPhone 16 Pro Max simulator. Swift Testing rather than XCTest: the
+cases are table-driven, and `@Test` gives each one the name and per-case failure
+that the Python harness's `check(name, got, want)` produced. XCTest would have
+meant 45 near-identical methods or one method with 57 assertions and no way to
+tell which failed. Both ship with Xcode; no dependency was added.
+
+Two things `HANDOFF.md` and `DEFERRED.md` asserted turned out to be wrong, and
+the port is where they surfaced:
+
+- **`SessionEngine` did not take an injectable date.** It read `Date.now` in six
+  places, so none of its behaviour could be tested without waiting in real time.
+  It now holds a `@MainActor () -> Date` seam, defaulting to the wall clock.
+  Production behaviour is unchanged; the tests substitute a fake and drive it
+  across three hours in milliseconds. `Stats` was genuinely injectable, as
+  claimed.
+- **The DST cases are weaker in Swift than in Python.** `Stats` reads
+  `Calendar.current` and cannot be handed a fixed calendar, so the spring-forward
+  and fall-back cases only cross a real transition on a machine in a US time
+  zone. Everywhere else they still prove the streak steps by calendar days rather
+  than 86,400-second jumps. Giving `Stats` a calendar seam would fix it and was
+  judged not worth a production change for two cases — noted here so the decision
+  is visible rather than silent.
 
 ## 1. `onHingeChange` — real signature
 

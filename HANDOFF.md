@@ -26,9 +26,9 @@ to need fixing. That is the normal state of this branch, not a warning sign.
   totals, labels and the face picker were built; iCloud sync was cut. See
   `DEFERRED.md`.
 - The accessibility pass: Dynamic Type, VoiceOver labels, reduce-motion.
-- `Tools/logic-check/` — `Stats` and `SessionEngine` ported to Python, running
-  the day-boundary and state-machine cases including BUILD.md's end-of-day-1
-  test. 55 cases, all passing. It proves the algorithm and never the Swift.
+- `ShutTests` — 45 tests, 57 assertions, all passing against the Swift itself.
+  Replaced the Python stand-in, which is deleted. Covers the day-boundary and
+  state-machine cases including BUILD.md's end-of-day-1 test.
 
 ## What is not done
 
@@ -92,8 +92,8 @@ Most likely to break, in rough order. All are guesses — nothing was compiled:
 ### 3. Run BUILD.md's end-of-day-1 test on the simulator
 
 Arm one minute, lock, wait, unlock: **Kept — 1m**. Arm again, lock, unlock after
-ten seconds, wait out the grace: **Broken**. `Tools/logic-check/engine_check.py`
-says both pass as logic; this is the run that says they pass as an app.
+ten seconds, wait out the grace: **Broken**. `ShutTests` says both pass as code;
+this is the run that says they pass as an app.
 
 Then the same on the Duo simulator with the fold, if Milestone 0 said yes.
 
@@ -104,11 +104,11 @@ the result screen, the Custom cell in the duration grid, the face picker, the
 grace stepper. Then check the free tier still reads correctly — History titled
 "Today", ring face only, grace fixed at 10s.
 
-### 5. Replace `Tools/logic-check/` with an XCTest target
+### 5. ~~Replace `Tools/logic-check/` with a test target~~ — done 2026-09-20
 
-The cases are already written and named; port them and delete the directory.
-`Stats` and `SessionEngine` both take an injectable date, which is why this is
-quick.
+`ShutTests` is in the project and green. `SessionEngine` gained a clock seam to
+make it testable; it had been reading `Date.now` directly, contrary to what this
+file and `DEFERRED.md` both claimed.
 
 ### 6. Icon, screenshots, metadata, archive, submit
 

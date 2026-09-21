@@ -25,15 +25,15 @@ Done:
   reduce-motion.
 - Three engine bugs. The worst recorded a finished block as *Broken* when the
   user opened the phone.
-- **Day 1, hour 7's** streak check across a midnight boundary, run against
-  `Tools/logic-check/` rather than a simulator.
+- **Day 1, hour 7's** streak check across a midnight boundary, now a case in
+  `ShutTests`.
 
 Still needs a Mac, in this order:
 
-1. **Milestone 0.** Unchanged, and still the first hour.
-2. First clean build on the plain-iPhone path, `DUO_SDK` off.
+1. **Milestone 0.** Unchanged, and still the first hour. Needs Xcode 27.1.
+2. ~~First clean build on the plain-iPhone path.~~ Done 2026-09-20.
 3. StoreKit in the simulator: buy, restore, and each Pro gate.
-4. An XCTest target to replace `Tools/logic-check/`.
+4. ~~A test target to replace `Tools/logic-check/`.~~ Done 2026-09-20: `ShutTests`.
 5. App icon, screenshots, metadata, archive, submit.
 
 ---
