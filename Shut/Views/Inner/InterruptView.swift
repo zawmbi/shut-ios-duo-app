@@ -20,9 +20,14 @@ struct InterruptView: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .padding(.top, 4)
+                .accessibilityLabel(
+                    "\(Stats.spoken(engine.graceRemaining)) to \(hinge.trigger == .fold ? "fold" : "lock") it again"
+                )
+                .accessibilityAddTraits(.updatesFrequently)
 
             Text(remainingLine)
-                .font(.system(size: 16))
+                .accessibilityLabel(spokenRemainingLine)
+                .font(.plain(.callout))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
                 .padding(.top, 10)
@@ -32,13 +37,13 @@ struct InterruptView: View {
 
             VStack(spacing: 10) {
                 Text(hinge.trigger == .fold ? "Fold it again to carry on." : "Lock it again to carry on.")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.plain(.subheadline, .medium))
                     .foregroundStyle(Theme.green)
 
                 Button("Break it") {
                     engine.breakNow()
                 }
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.rounded(.subheadline, .semibold))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 28)
@@ -58,5 +63,12 @@ struct InterruptView: View {
             return "\(Stats.format(engine.elapsed)) in. Nothing is lost yet."
         }
         return "\(Stats.format(remaining)) left. Nothing is lost yet."
+    }
+
+    private var spokenRemainingLine: String {
+        guard let remaining = engine.remaining else {
+            return "\(Stats.spoken(engine.elapsed)) in. Nothing is lost yet."
+        }
+        return "\(Stats.spoken(remaining)) left. Nothing is lost yet."
     }
 }

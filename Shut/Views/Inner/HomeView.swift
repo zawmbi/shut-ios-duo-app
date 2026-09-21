@@ -42,12 +42,12 @@ struct HomeView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Shut")
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .font(.rounded(.largeTitle, .heavy))
                 .foregroundStyle(Theme.ink)
             Spacer()
             Button { showSettings = true } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.plain(.body, .semibold))
                     .foregroundStyle(Theme.inkSoft)
             }
             .accessibilityLabel("Settings")
@@ -57,10 +57,10 @@ struct HomeView: View {
     private var instruction: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(hinge.trigger.verb)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.rounded(.title, .bold))
                 .foregroundStyle(Theme.green)
             Text(subtitle)
-                .font(.system(size: 15))
+                .font(.plain(.subheadline))
                 .foregroundStyle(Theme.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -91,7 +91,7 @@ struct HomeView: View {
                 stat("Streak", "\(Stats.streak(sessions)) d")
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.plain(.footnote, .semibold))
                     .foregroundStyle(Theme.inkSoft)
             }
         }
@@ -103,7 +103,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label).labelStyle()
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.rounded(.title3, .bold))
                 .foregroundStyle(Theme.ink)
                 .monospacedDigit()
         }

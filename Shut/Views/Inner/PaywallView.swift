@@ -20,10 +20,10 @@ struct PaywallView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("One payment").labelStyle()
                         Text("Shut Pro")
-                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                            .font(.rounded(.largeTitle, .heavy))
                             .foregroundStyle(Theme.ink)
                         Text("No subscription. Nothing leaves your phone, before or after.")
-                            .font(.system(size: 15))
+                            .font(.plain(.subheadline))
                             .foregroundStyle(Theme.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -32,15 +32,15 @@ struct PaywallView: View {
                         ForEach(features, id: \.0) { title, detail in
                             HStack(alignment: .top, spacing: 12) {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.plain(.caption, .bold))
                                     .foregroundStyle(Theme.green)
                                     .padding(.top, 4)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(title)
-                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                        .font(.rounded(.callout, .semibold))
                                         .foregroundStyle(Theme.ink)
                                     Text(detail)
-                                        .font(.system(size: 13))
+                                        .font(.plain(.footnote))
                                         .foregroundStyle(Theme.inkSoft)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -57,7 +57,7 @@ struct PaywallView: View {
                         Task { if await pro.purchase() { dismiss() } }
                     } label: {
                         Text(pro.purchasing ? "…" : "Buy for \(pro.priceText)")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .font(.rounded(.body, .semibold))
                             .foregroundStyle(Theme.cream)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -68,7 +68,7 @@ struct PaywallView: View {
                     .disabled(pro.purchasing || pro.product == nil)
 
                     Button("Restore purchase") { Task { await pro.restore() } }
-                        .font(.system(size: 14))
+                        .font(.plain(.footnote))
                         .foregroundStyle(Theme.inkSoft)
                 }
                 .padding(.horizontal, 24)

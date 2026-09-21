@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(HingeMonitor.self) private var hinge
     @Environment(SessionClock.self) private var clock
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Group {
@@ -24,7 +25,7 @@ struct RootView: View {
                 ResultView()
             }
         }
-        .animation(.snappy(duration: 0.25), value: engine.phase)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: engine.phase)
         .preferredColorScheme(Theme.scheme)
         .hingeAware(hinge)
         .onChange(of: scenePhase) { _, phase in

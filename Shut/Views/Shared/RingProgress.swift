@@ -5,6 +5,8 @@ struct RingProgress: View {
     var lineWidth: CGFloat = 10
     var indeterminate: Bool = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         ZStack {
             Circle()
@@ -16,7 +18,7 @@ struct RingProgress: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 0.25), value: progress)
+                .animation(reduceMotion ? nil : .linear(duration: 0.25), value: progress)
         }
         .accessibilityHidden(true)
     }

@@ -16,10 +16,32 @@ enum Theme {
     static let scheme: ColorScheme = .light
 }
 
+extension Font {
+    /// The app's type scale.
+    ///
+    /// `Font.system(size:)` ignores Dynamic Type entirely, so every piece of
+    /// real text goes through a text style instead. The fixed sizes this
+    /// replaced mapped almost exactly onto the built-in styles — 11pt is
+    /// `.caption2`, 15pt is `.subheadline`, 34pt is `.largeTitle` — so the
+    /// design is unchanged at the default size and now grows with the setting.
+    ///
+    /// The big numerals on the timer, interrupt and result screens keep a fixed
+    /// size on purpose: they are already far larger than any Dynamic Type step,
+    /// and each one carries an accessibility label that reads the time aloud.
+    static func rounded(_ style: Font.TextStyle, _ weight: Font.Weight = .regular) -> Font {
+        .system(style, design: .rounded, weight: weight)
+    }
+
+    /// The same scale in the system face, for body copy and controls.
+    static func plain(_ style: Font.TextStyle, _ weight: Font.Weight = .regular) -> Font {
+        .system(style, design: .default, weight: weight)
+    }
+}
+
 extension Text {
     /// Small uppercase label, used for every secondary line in the app.
     func labelStyle() -> some View {
-        self.font(.system(size: 11, weight: .semibold, design: .rounded))
+        self.font(.rounded(.caption2, .semibold))
             .tracking(1.4)
             .textCase(.uppercase)
             .foregroundStyle(Theme.inkSoft)

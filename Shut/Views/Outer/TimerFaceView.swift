@@ -42,6 +42,22 @@ struct TimerFaceView: View {
         .onAppear { clock.start() }
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
+        // The face is one number drawn three ways. As written the digits are
+        // decorative to VoiceOver, so the whole face becomes a single element
+        // that reads the time remaining and re-reads it as it changes.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spokenTime)
+        .accessibilityAddTraits(.updatesFrequently)
+        // Almost no text, a small display, and a caption that must not wrap:
+        // the face scales a little and then stops.
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+    }
+
+    private var spokenTime: String {
+        if let remaining = engine.remaining {
+            return "\(Stats.spoken(remaining)) left"
+        }
+        return "\(Stats.spoken(engine.elapsed)) elapsed"
     }
 
     private var timeText: String {
@@ -67,7 +83,7 @@ struct TimerFaceView: View {
                     .monospacedDigit()
                     .contentTransition(.numericText(countsDown: true))
                 Text(engine.targetSeconds == 0 ? "elapsed" : "left")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .font(.rounded(.caption2, .semibold))
                     .tracking(1.4)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.cream.opacity(0.45))
