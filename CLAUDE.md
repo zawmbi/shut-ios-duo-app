@@ -32,17 +32,29 @@ simpler one and note it in `DEFERRED.md`.
 
 ## Target and toolchain
 
-- Xcode 27.1 or later, iOS 27.1 SDK. Building against Xcode 26 or earlier
-  letterboxes the app away from the status bar and camera on Duo — don't.
+**You need two Xcodes, and which one you reach for depends on what you're doing.**
+`HANDOFF.md` carries the full table; the short version:
+
+- **Develop on Xcode 27.1**, iOS 27.1 SDK. It is the only one with the Duo SDK
+  and the Duo simulator. **It is a beta**, so nothing built with it can go to the
+  App Store.
+- **Archive on the Xcode 27.0 release.** Apple rejects App Store builds made with
+  a beta Xcode. Building against Xcode 26 or earlier letterboxes the app away
+  from the status bar and camera on Duo — don't do that either.
+- Leave `xcode-select` on the release Xcode so an archive can't be cut with the
+  beta by accident, and reach for the beta per command:
+  `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcrun …`
 - Deployment target: iOS 26.0. See "The universal-build rule" below for why it
   isn't 27.1.
 - Single app target, no extensions in v1.
 - Swift 6 language mode, strict concurrency. `SessionEngine` and `HingeMonitor`
   are `@MainActor`.
-- Test device: the iPhone Duo simulator in Xcode 27.1, which has pose controls for
-  closed / tent / laptop / partially folded / fully open. No physical hardware
-  exists outside Apple until Oct 23, so every hinge behaviour is simulator-verified
-  only. Write the code so a wrong assumption about real hardware is a one-file fix.
+- Test device: the iPhone Duo simulator, opened through **Device Hub**
+  (`Xcode-beta.app/Contents/Applications/DeviceHub.app` — there is no standalone
+  Simulator.app in Xcode 27). Its poses are **closed / book (~100°) / open**,
+  plus any position in 0.0–1.0. No physical hardware exists outside Apple until
+  Oct 23, so every hinge behaviour is simulator-verified only. Write the code so
+  a wrong assumption about real hardware is a one-file fix.
 
 ---
 
@@ -70,22 +82,33 @@ writing a second `isDuo` check somewhere else, the abstraction is wrong.
 
 ## iPhone Duo APIs
 
-Confirmed from Apple's *Preparing your app for iPhone Duo*:
+Verified against the iOS 27.1 SDK on 2026-09-21. Transcript in `FINDINGS.md`.
 
 | What | SwiftUI | UIKit |
 |---|---|---|
-| Hinge posture + angle | `.onHingeChange { context in … }` | `UIHingeInteraction` |
+| Hinge posture + angle | `.onHingeChange { oldContext, newContext in … }` | `UIHingeInteraction` |
 | The fold / camera regions | `GeometryProxy.reservedRegions(kind:options:layoutDirectionBehavior:)` | `UIView.reservedRegions(kind:options:)` |
 | Two-pane adaptive container | `ArrangementView` with `.split` / `.overlay` | `UIArrangementViewController` |
 | Is the toolbar vertical right now | `EnvironmentValues.toolbarVerticalEdge` | `UITraitCollection.verticalBarEdge` |
 
 Notes that matter for this app:
 
-- The hinge context carries **both** a coarse status (closed / partially open /
-  fully open) **and** a continuous angle. We only need the coarse status. Ignore
-  the angle entirely — reading it invites precision bugs we can't test for.
+- **`onHingeChange` hands back two contexts, old and new.** Use the new one.
+- It **fires once on appear** with the posture the device is already in, so a
+  phone that is already shut at launch reports correctly. No seed read.
+- The hinge carries **both** a coarse `status` **and** a continuous `angle`
+  (a SwiftUI `Angle`). We only need the status. Ignore the angle entirely —
+  reading it invites precision bugs we can't test for.
+- **`DeviceHinge.Status` is a struct, not an enum.** Its members are `.closed`,
+  `.partiallyOpen` and `.fullyOpen`; there is no `.unknown` and no exhaustive
+  switch. Compare with `==` and default to open, which never starts a block by
+  accident.
 - `context.hinge` is **nil on every non-Duo iPhone**. Always unwrap. This is the
-  single most important line in the app.
+  single most important line in the app. **But nil is not proof of a non-Duo**:
+  Apple also delivers nil when the observer leaves a hierarchy that provides
+  hinge updates, so it can arrive mid-session on a real Duo. `HingeMonitor`
+  latches `isFoldable` on and treats a nil reading as "no new information",
+  never as "downgrade this device".
 - Reserved regions come in two kinds: `.division` (the fold) and `.occlusion`
   (the camera). A region can be active or inactive — the fold is active only when
   the phone is *partially* open. Query with `.includeInactive` when you need to
@@ -97,27 +120,29 @@ Notes that matter for this app:
 - Safe-area insets are asymmetric on Duo. Handle each edge independently; never
   assume left inset equals right inset.
 
-### ⚠️ APIs to verify before relying on them
+### The outer display — answered, 2026-09-21
 
-I could not confirm exact symbol names for these. **Do not invent them.** Check
-Apple's tech talk *Leverage multiple displays and scenes on iPhone Duo*
-(developer.apple.com/videos/play/tech-talks/111464) and the current SDK headers,
-then write down what you actually find in `FINDINGS.md`:
+**There is no outer-display scene API, and none is needed.** iOS 27.1 has no
+second `Scene`, no `WindowGroup` role, nothing. The system relocates the app's
+single scene between the Duo's two integrated displays when the hinge crosses
+the swap boundary. Measured from inside the running app while shut: one
+connected scene, one `UIScreen`, 466×678pt on the cover display.
 
-1. **How an app presents different content on the outer display vs. the inner one.**
-   The entire product depends on this. It's a scene-level API, not a view modifier.
-2. **Whether an app keeps executing when the phone is folded shut**, and in which
-   scene. The outer display stays active when closed — it is not a laptop lid — so
-   this probably works, but "probably" is not a foundation.
-3. `CameraCaptureAccessory` — mentioned in the docs for showing content on the
-   outer display during a capture session. Probably not what we want, but read it
-   before ruling it out; it may reveal the general outer-display pattern.
+So **the app keeps executing when the phone is folded shut**, and what the cover
+display shows is simply what the app draws. "Inner face vs outer face" is an
+ordinary view-level branch on `HingeMonitor.posture` inside `RootView` — not a
+scene-level decision. `Views/Outer/TimerFaceView` is presented like any other
+view.
 
-If (1) and (2) don't pan out, take Plan B immediately: schedule a
-`UNNotificationRequest` for the target time, detect the fold on the way down,
-recompute everything from `startedAt` when the app comes back to the foreground,
-and ship without a live outer-display face. Worse product, still shippable. Make
-that call in the first hour, not on day two.
+**Plan B is dead.** The local-notification fallback is not needed and should not
+be written. `CameraCaptureAccessory` is moot.
+
+Two things still unobserved, because poses can only be driven through Device
+Hub's GUI: the `.division` (fold) region, which can only be non-empty while the
+phone is *partially* open, and the swap transition itself. Do not write layout
+that assumes a fold region exists until someone has seen one. On the cover
+display both region kinds come back **empty** — the vertical status bar there
+arrives as safe-area inset, not as a reserved region.
 
 ---
 
@@ -126,7 +151,7 @@ that call in the first hour, not on day two.
 ```
 Shut/
   App/
-    ShutApp.swift              scene setup, inner vs outer routing
+    ShutApp.swift              scene setup and the model container
   Core/
     HingeMonitor.swift         the ONLY hardware-aware type
     SessionEngine.swift        state machine; owns all transitions
@@ -136,7 +161,7 @@ Shut/
     Prefs.swift                @AppStorage wrapper
   Views/
     Inner/  Home, Interrupt, Result, History, Settings, Paywall
-    Outer/  TimerFace
+    Outer/  TimerFace          (a view, not a scene — RootView presents it)
     Shared/ RingProgress, DurationPicker, StatRow
   Store/
     Entitlements.swift         StoreKit 2, one non-consumable

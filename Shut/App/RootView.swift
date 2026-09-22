@@ -1,7 +1,11 @@
 import SwiftUI
 
-/// Routes the inner display on engine phase. The outer display is handled
-/// separately in `ShutApp` and always shows the timer face.
+/// Routes on engine phase, for whichever display the app is currently on.
+///
+/// There is no separate outer-display view tree. On Duo the system relocates
+/// the app's single scene to the cover display when the phone is shut, so the
+/// branch below is all the routing there is — `TimerFaceView` on `.running` is
+/// what the cover display shows. See `FINDINGS.md` §2.
 struct RootView: View {
     @Environment(SessionEngine.self) private var engine
     @Environment(HingeMonitor.self) private var hinge
@@ -15,9 +19,10 @@ struct RootView: View {
             case .idle, .armed:
                 HomeView()
             case .running:
-                // On Duo this is only reached transiently; on every other
-                // iPhone it is what the user sees the instant before the screen
-                // locks, and what greets them on unlock.
+                // On Duo this is the cover-display face, shown for the whole
+                // block. On every other iPhone it is what the user sees the
+                // instant before the screen locks, and what greets them on
+                // unlock. Same view, same state, different display.
                 TimerFaceView()
             case .grace:
                 InterruptView()
