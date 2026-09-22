@@ -59,10 +59,28 @@ final class HingeMonitor {
 
     // MARK: - Inputs
 
-    /// Called by `HingeBridge` on iPhone Duo. See the VERIFY banner in that file.
+    /// Called by `HingeBridge` on iPhone Duo whenever a hinge is reported.
+    ///
+    /// `isFoldable` latches on. Once this device has produced a hinge it is a
+    /// fold device for the rest of the process, and a later nil reading cannot
+    /// downgrade it — see `ingestHingeUnavailable()`.
     func ingestHinge(isFoldable: Bool, posture: Posture) {
-        self.isFoldable = isFoldable
+        if isFoldable { self.isFoldable = true }
         self.posture = posture
+    }
+
+    /// Called when the hinge observer reports a nil hinge.
+    ///
+    /// This is deliberately *not* "the device stopped being foldable". Apple's
+    /// `UIHingeInteraction` header documents nil as also meaning the observer
+    /// has left a hierarchy that provides hinge updates, so on a Duo this can
+    /// arrive mid-session. Posture is left untouched rather than guessed: a
+    /// wrong `.open` here would break a block the user is still keeping.
+    ///
+    /// On a non-foldable iPhone `isFoldable` has never been set, so this is a
+    /// no-op and the lock-based path stays in charge.
+    func ingestHingeUnavailable() {
+        // Intentionally empty. Documented above so nobody "fixes" it later.
     }
 
     /// Called on every device from the root view's scene-phase observer.

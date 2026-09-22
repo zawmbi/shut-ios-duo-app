@@ -36,23 +36,21 @@ struct ShutApp: App {
         .modelContainer(container)
 
         // ─────────────────────────────────────────────────────────────────────
-        //  ⚠️  THE OUTER DISPLAY — Milestone 0, and the reason this app exists
+        //  THE OUTER DISPLAY — answered in Milestone 0, 2026-09-21.
         //
-        //  On iPhone Duo the app must keep running when the phone is folded
-        //  shut, and present the timer face on the outer display rather than
-        //  the inner one. The outer display stays lit when the phone is closed
-        //  — it is not a laptop lid — so this should work, but the exact scene
-        //  API is unconfirmed. Watch Apple's tech talk "Leverage multiple
-        //  displays and scenes on iPhone Duo" (tech-talks/111464), find the
-        //  real API, and replace this comment with it.
+        //  There is no second scene to add here, and that is the good outcome.
+        //  iOS 27.1 has no outer-display scene API: the system relocates this
+        //  single WindowGroup between the Duo's two integrated displays when
+        //  the hinge crosses the swap boundary. Verified on the simulator —
+        //  while shut, the app is alive and drawing on the cover display, and
+        //  reports exactly one connected scene and one UIScreen.
         //
-        //  PLAN B, if there is no usable outer-display scene: keep the single
-        //  WindowGroup, rely on the scheduled local notification to signal the
-        //  end of a block, and recompute everything from `startedAt` when the
-        //  app returns to the foreground. The engine already works this way —
-        //  it never trusts a timer — so Plan B is a deletion, not a rewrite.
-        //  Make that call in the first hour. Do not write UI against an API you
-        //  have not seen compile.
+        //  So "inner face vs outer face" is a view-level branch on
+        //  HingeMonitor.posture inside RootView, not a scene-level decision,
+        //  and Views/Outer/TimerFaceView is presented like any other view.
+        //
+        //  Plan B (local notifications, no live face) is NOT needed. See
+        //  FINDINGS.md §2 for the measurements.
         // ─────────────────────────────────────────────────────────────────────
     }
 }

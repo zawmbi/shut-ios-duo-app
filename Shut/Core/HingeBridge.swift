@@ -1,23 +1,18 @@
 import SwiftUI
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  ⚠️  VERIFY BEFORE TRUSTING — Milestone 0
+//  VERIFIED against the iOS 27.1 SDK and the iPhone Duo simulator, 2026-09-21.
+//  See FINDINGS.md §1 for the transcript. The signature below is the real one,
+//  read out of SwiftUICore's .swiftinterface and exercised in a running app:
 //
-//  This file is the ONLY place that touches iPhone Duo hinge APIs, and it is
-//  written from Apple's published documentation rather than from a compiler.
-//  The symbol name `onHingeChange` is confirmed; the exact shape of the context
-//  it hands back is NOT. Before building anything on top of this:
+//      func onHingeChange(
+//          isEnabled: Bool = true,
+//          _ action: @escaping (_ oldContext: DeviceHingeContext,
+//                               _ newContext: DeviceHingeContext) -> Void
+//      ) -> some View
 //
-//    1. Open the iPhone Duo simulator in Xcode 27.1.
-//    2. Option-click `onHingeChange` and read the real signature.
-//    3. Fix the body of `duoHingeReader` below to match.
-//    4. Run, rotate through every pose, and confirm the printed posture.
-//    5. Write what you found into FINDINGS.md.
-//
-//  The whole project compiles and runs WITHOUT this code path. Build with
-//  `-D DUO_SDK` (Build Settings ▸ Other Swift Flags) only once step 3 is done.
-//  Until then the app is a working lock-to-focus timer on any iPhone, which is
-//  also exactly what it must be on non-Duo hardware in the shipped build.
+//  Two contexts, not one. `DeviceHinge.Status` is a struct with static members,
+//  not an enum, so there is no exhaustive switch to write over it.
 // ─────────────────────────────────────────────────────────────────────────────
 
 extension View {
@@ -33,24 +28,31 @@ private struct HingeAware: ViewModifier {
     func body(content: Content) -> some View {
         #if DUO_SDK
         if #available(iOS 27.1, *) {
-            content.onHingeChange { context in
-                // VERIFY: `context.hinge` is nil on every non-Duo iPhone. That
-                // nil check is the single most important line in the app — it
-                // is what lets one binary serve both device families.
-                guard let hinge = context.hinge else {
-                    monitor.ingestHinge(isFoldable: false, posture: .open)
+            content.onHingeChange { _, newContext in
+                // The modifier fires once on appear with the posture the device
+                // is already in — verified: the first delivery carries
+                // `oldContext.hinge == nil` and a populated `newContext`. So
+                // there is no seed read to write, and a phone that is already
+                // shut when the app launches is reported as shut.
+                //
+                // A nil `newContext.hinge` does NOT mean "not a foldable". The
+                // UIKit header for the equivalent `UIHingeInteraction` says nil
+                // is also delivered when the observer "leaves a hierarchy that
+                // provides hinge updates". Treating that as non-foldable would
+                // silently downgrade a Duo mid-session, so `HingeMonitor`
+                // latches: once a hinge has been seen, this stays a fold device.
+                guard let hinge = newContext.hinge else {
+                    monitor.ingestHingeUnavailable()
                     return
                 }
-                // VERIFY: confirm the case names on the coarse status enum.
-                // Apple's prose calls them closed / partially open / fully open.
-                // We deliberately ignore the continuous angle the context also
-                // carries: we cannot test angle precision without hardware, and
-                // this product does not need it.
-                let posture: HingeMonitor.Posture = switch hinge.status {
-                case .closed:        .closed
-                case .partiallyOpen: .partial
-                default:             .open
-                }
+                // `Status` is a struct of static members, so this is `==`, not
+                // enum matching. We ignore `hinge.angle` deliberately: the
+                // product only needs shut vs not-shut, and Apple's own header
+                // says to prefer `status` over the angle for exactly that.
+                let posture: HingeMonitor.Posture =
+                    if hinge.status == .closed { .closed }
+                    else if hinge.status == .partiallyOpen { .partial }
+                    else { .open }
                 monitor.ingestHinge(isFoldable: true, posture: posture)
             }
         } else {
