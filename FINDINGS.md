@@ -5,7 +5,8 @@ source tree currently guesses at. Nothing else should be built until these are
 answered.
 
 > **Status: all four questions are answered.** Verified 2026-09-21 against the
-> iOS 27.1 SDK (build 27A9269) and a booted iPhone Duo simulator, by reading the
+> iOS 27.1 SDK (**Xcode 27.1 beta**, build 27A9269) and a booted iPhone Duo
+> simulator, by reading the
 > real `.swiftinterface` and by running instrumented code on the device. The
 > headline: **Plan B is not needed.** The app keeps running when the phone is
 > shut, on the cover display, and `-D DUO_SDK` now compiles and runs.
@@ -287,13 +288,21 @@ stays exactly where it is — it just gets presented by `RootView` when
       `-orientation=…`, `-position=<closed|book|open|0.0-1.0>`,
       `-fade` | `-continuous`, and `-wait`.
 
-      **But no pose can be set on this Mac today.** `suiatool` is not shipped in
-      the runtime — only the strings that describe it are — and **Simulator.app
-      is not installed at all**: neither `/Applications/Xcode.app` nor
-      `/Applications/Xcode-beta.app` has a `Contents/Developer/Applications`
-      directory, so there is no Simulator GUI and therefore no pose menu.
-      `simctl` has no pose or hinge verb. The device sits in whatever pose it
-      boots in, which is **closed**.
+      **No pose can be set headlessly**, which is the honest limit of this
+      session: `suiatool` is not shipped in the runtime — only the strings that
+      describe it are — and `simctl` has no pose or hinge verb. Driven from the
+      command line, the device sits in whatever pose it boots in, which is
+      **closed**.
+
+      **Correction.** An earlier draft of this section claimed Simulator.app was
+      not installed. That was wrong, and the mistake was looking in the Xcode 26
+      location. Xcode 27 ships the simulator GUI as **`DeviceHub.app`**, at
+      `Contents/Applications/DeviceHub.app` — present in *both* Xcodes here, as
+      is Icon Composer. The old `Contents/Developer/Applications` directory no
+      longer exists in either, which is what misled the check. `HANDOFF.md` is
+      right: Device Hub is where the Duo simulator and its pose control live,
+      and it is GUI-only, so it needs a human in front of it. That is the single
+      remaining step of Milestone 0, not a missing install.
 
       Consequence: everything above about the *closed* pose is measured;
       nothing about the open or partially-open pose is. The fold `.division`
@@ -333,5 +342,12 @@ Everything else in the API table checked out: `GeometryProxy.reservedRegions`,
 launches and renders on the Duo cover display. This is the first time the
 `DUO_SDK` path has been through a compiler.
 
-`-D DUO_SDK` is still **not** set in the Xcode project. Set it once §2's
-`ShutApp.swift` cleanup is done and a pose change has actually been observed.
+`-D DUO_SDK` is still **not** set in the Xcode project. Set it once a pose
+change has actually been observed. (§2's `ShutApp.swift` cleanup is done.)
+
+**This build is not submittable, and that is expected.** Xcode 27.1 is a beta,
+so Apple will not accept an App Store build made with it — see `HANDOFF.md`'s
+toolchain table and the v1.0 / v1.1 split. Milestone 0 is development, not
+submission, so the beta is the right tool for everything in this file. v1.0
+archives on the **Xcode 27.0 release** with `DUO_SDK` off; the hinge ships in
+v1.1 once 27.1 is final.
