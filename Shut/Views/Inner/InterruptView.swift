@@ -63,7 +63,8 @@ struct InterruptView: View {
                     .font(.plain(.subheadline, .bold))
                     .foregroundStyle(palette.primaryText)
 
-                Button("Break it") {
+                // An open-ended block isn't broken by stopping it — it ends kept.
+                Button(engine.targetSeconds == 0 ? "End it" : "Break it") {
                     engine.breakNow()
                 }
                 .font(.plain(.subheadline, .bold))
@@ -86,14 +87,14 @@ struct InterruptView: View {
 
     private var remainingLine: String {
         guard let remaining = engine.remaining else {
-            return "\(Stats.format(engine.elapsed)) in. Nothing is lost yet."
+            return "\(Stats.format(engine.elapsed)) in. Leave it open and the block ends there."
         }
         return "\(Stats.format(remaining)) left. Nothing is lost yet."
     }
 
     private var spokenRemainingLine: String {
         guard let remaining = engine.remaining else {
-            return "\(Stats.spoken(engine.elapsed)) in. Nothing is lost yet."
+            return "\(Stats.spoken(engine.elapsed)) in. Leave it open and the block ends there."
         }
         return "\(Stats.spoken(remaining)) left. Nothing is lost yet."
     }

@@ -234,4 +234,53 @@ struct StatsTests {
     func spokenForm(_ c: (seconds: TimeInterval, want: String)) {
         #expect(Stats.spoken(c.seconds) == c.want)
     }
+
+    // MARK: - Forgiveness
+
+    /// Kept blocks on each of the given September 2026 days.
+    private func kept(_ days: [Int]) -> [Session] {
+        days.map { session(date(2026, 9, $0), minutes: 25) }
+    }
+
+    @Test("Free: the first missed day ever is forgiven")
+    func freeForgivesFirstMiss() {
+        // Kept 17, 18, missed 19, kept 20, 21.
+        let sessions = kept([17, 18, 20, 21])
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .none) == 2)
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .firstMiss) == 4)
+    }
+
+    @Test("Free: only the first — a later miss resets it")
+    func freeDoesNotForgiveSecondMiss() {
+        // Missed 12 (the first, forgiven) and 19 (not forgiven).
+        let sessions = kept([10, 11, 13, 14, 15, 16, 17, 18, 20, 21])
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .firstMiss) == 2)
+    }
+
+    @Test("Free: two missed days in a row are not bridged")
+    func freeDoesNotBridgeTwoDays() {
+        let sessions = kept([17, 18, 21])
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .firstMiss) == 1)
+    }
+
+    @Test("Pro: one missed day in every seven is forgiven")
+    func proForgivesWeekly() {
+        // Missed 12 and 19: a week apart, both forgiven.
+        let sessions = kept([10, 11, 13, 14, 15, 16, 17, 18, 20, 21])
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .weekly) == 10)
+    }
+
+    @Test("Pro: two misses inside a week — the second resets it")
+    func proDoesNotForgiveTwiceInAWeek() {
+        // Missed 16 and 19: three days apart.
+        let sessions = kept([14, 15, 17, 18, 20, 21])
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .weekly) == 4)
+    }
+
+    @Test("A forgiven yesterday keeps the streak alive before today's block")
+    func forgivenYesterdayKeepsItAlive() {
+        let sessions = kept([18, 19])
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .firstMiss) == 2)
+        #expect(Stats.streak(sessions, now: date(2026, 9, 21), forgiveness: .none) == 0)
+    }
 }

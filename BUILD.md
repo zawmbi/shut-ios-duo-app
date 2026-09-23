@@ -114,6 +114,55 @@ and get "Broken". If both work, the app is real.
 
 ## App Store metadata
 
+### v1.0 — lock only, archived on Xcode 27.0
+
+v1.0 ships with `DUO_SDK` off, so it has **no hinge code**: folding a Duo does
+nothing in it. Every word of its listing has to be true of that binary. App
+Review guideline 2.3.1 rejects metadata that describes features the build
+doesn't have, and a Duo owner who buys on the fold promise gets a lock timer.
+The fold copy below waits for v1.1.
+
+**Name** — `Shut: Lock to Focus` · 19
+
+**Subtitle** — `Lock the phone. Begin focus.` · 28
+
+**Keywords** —
+`focus,deep work,pomodoro,timer,screen time,lock,distraction,study,attention,detox,no account` · 92
+
+**Promotional text**
+> Lock your phone and a focus block starts. Unlock it, or wander off into
+> another app, and the block breaks. No allowlist to edit, no five-more-minutes
+> button.
+
+**Description**
+
+> Shut is a focus timer with one input: the lock button.
+>
+> Pick a length and lock your phone. A block begins. Unlock it before the block
+> is up — or go home and open something else — and it breaks. You get ten
+> seconds to lock it again before that counts.
+>
+> Every other focus app asks you to configure a blocklist and then trust yourself
+> not to edit it. This one doesn't. The commitment is the lock.
+>
+> — Unlimited blocks, free, forever
+> — Today's total and your current streak
+> — Nothing is collected and nothing is sent anywhere. No account, no server, no
+>   analytics. Your blocks never leave the phone.
+>
+> Shut Pro, one payment: full history, weekly and monthly totals, labels, custom
+> lengths, extra timer faces and themes, a forgiving streak, and an adjustable
+> grace period.
+
+Telling "locked" from "left the app" needs a device passcode. Without one, iOS
+never says the phone locked, and going home counts as locking. Nearly every
+phone has a passcode; the listing doesn't need to say so.
+
+**Screenshots** — no fold anywhere: Home, a running block, the grace screen,
+Kept, History, the privacy card.
+
+### v1.1 — the Duo release, once Xcode 27.1 is final
+
 **Name** (30 max) — `Shut: Fold to Focus` · 19
 
 **Subtitle** (30 max) — `Close the phone. Begin focus.` · 28
@@ -146,11 +195,12 @@ and get "Broken". If both work, the app is real.
 >   analytics. Your blocks never leave the phone.
 >
 > Shut Pro, one payment: full history, weekly and monthly totals, labels, custom
-> lengths, extra timer faces, and an adjustable grace period.
+> lengths, extra timer faces and themes, a forgiving streak, and an adjustable
+> grace period.
 
 **Category** — Productivity (primary), Health & Fitness (secondary)
 **Age** — 4+
-**Price** — Free, with `xyz.zawmbi.shut.pro` at $4.99 non-consumable
+**Price** — Free, with `com.zawmbi.shut.pro` at $4.99 non-consumable
 
 **Screenshots** — six, and the fold has to be visible in at least three:
 

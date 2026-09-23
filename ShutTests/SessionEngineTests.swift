@@ -32,14 +32,45 @@ struct SessionEngineTests {
             var t = Date(timeIntervalSinceReferenceDate: 800_000_000)
         }
 
-        init(grace: Int = Prefs.defaultGraceSeconds) {
+        /// Where the engine mirrors its in-flight block. A fresh suite per
+        /// harness, so no case can see another's block.
+        let store: UserDefaults
+
+        init(grace: Int = Prefs.defaultGraceSeconds, pro: Bool = true) {
             UserDefaults.standard.set(grace, forKey: PrefKey.graceSeconds)
+            UserDefaults.standard.set(pro, forKey: PrefKey.proCached)
             let clock = Clock()
             self.clock = clock
             engine.now = { clock.t }
+            let suite = "shut.tests.\(UUID().uuidString)"
+            store = UserDefaults(suiteName: suite)!
+            store.removePersistentDomain(forName: suite)
+            engine.store = store
         }
 
-        deinit { UserDefaults.standard.removeObject(forKey: PrefKey.graceSeconds) }
+        deinit {
+            UserDefaults.standard.removeObject(forKey: PrefKey.graceSeconds)
+            UserDefaults.standard.removeObject(forKey: PrefKey.proCached)
+        }
+
+        /// The current instant on the fake clock, for dating a posture change.
+        func at(_ t: TimeInterval) -> Date {
+            Date(timeIntervalSinceReferenceDate: 800_000_000 + t)
+        }
+
+        func handle(_ posture: HingeMonitor.Posture, at t: TimeInterval) {
+            engine.handle(posture: posture, at: at(t))
+        }
+
+        /// A second engine on the same clock and store — the process the system
+        /// launches after killing this one.
+        func relaunch() -> SessionEngine {
+            let next = SessionEngine()
+            next.now = engine.now
+            next.store = store
+            next.restore()
+            return next
+        }
 
         /// Seconds since the harness started, as the engine sees them.
         private var elapsedFromOrigin: TimeInterval {
@@ -261,8 +292,8 @@ struct SessionEngineTests {
 
     // MARK: - Open-ended blocks
 
-    @Test("An open-ended block never self-completes; it breaks when opened")
-    func openEndedBreaksOnOpen() {
+    @Test("An open-ended block never self-completes; opening it ends it Kept")
+    func openEndedKeptOnOpen() {
         let h = Harness()
         h.arm(0)
         h.handle(.closed)
@@ -270,7 +301,20 @@ struct SessionEngineTests {
         h.handle(.open)
         h.awake(until: 1811)
 
-        #expect(h.outcome == .broken)
+        #expect(h.outcome == .completed)
+    }
+
+    @Test("... and so does ending it from the grace screen")
+    func openEndedEndItIsKept() {
+        let h = Harness()
+        h.arm(0)
+        h.handle(.closed)
+        h.shut(until: 600)
+        h.handle(.open)
+        h.engine.breakNow()
+
+        #expect(h.outcome == .completed)
+        #expect(h.credited == 600)
     }
 
     @Test("... and is credited the time it was actually shut")
@@ -321,63 +365,260 @@ struct SessionEngineTests {
         #expect(h.phase == .running)
     }
 
+    // MARK: - Leaving the app, dated after the fact
+
+    @Test("Left at 24m of 25, back at 30m: Broken at 24m, not Kept")
+    func leftBeforeTargetReturnedAfter() {
+        let h = Harness()
+        h.arm(25 * 60)
+        h.handle(.closed)
+        h.shut(until: 30 * 60)
+        h.handle(.open, at: 24 * 60)
+
+        #expect(h.outcome == .broken)
+        #expect(h.credited == 1440)
+    }
+
+    @Test("Left at 30m of 25: the block was already Kept")
+    func leftAfterTarget() {
+        let h = Harness()
+        h.arm(25 * 60)
+        h.handle(.closed)
+        h.shut(until: 31 * 60)
+        h.handle(.open, at: 30 * 60)
+
+        #expect(h.outcome == .completed)
+        #expect(h.credited == 1500)
+    }
+
+    @Test("A release discovered 5s late still leaves 5s of grace")
+    func lateReleaseKeepsRemainingGrace() {
+        let h = Harness()
+        h.arm(60)
+        h.handle(.closed)
+        h.shut(until: 25)
+        h.handle(.open, at: 20)
+
+        #expect(h.phase == .grace)
+        #expect(h.engine.graceRemaining == 5)
+    }
+
+    @Test("A lock discovered late starts the block when the lock happened")
+    func lateLockStartsBackdated() {
+        let h = Harness()
+        h.arm(60)
+        h.shut(until: 15)
+        h.handle(.closed, at: 3)
+
+        #expect(h.engine.startedAt == h.at(3))
+    }
+
+    // MARK: - Surviving the process
+
+    @Test("Killed while locked, relaunched after the target: Kept")
+    func relaunchAfterTargetIsKept() {
+        let h = Harness()
+        h.arm(60)
+        h.handle(.closed)
+        h.shut(until: 90)
+        let next = h.relaunch()
+
+        #expect(next.lastFinished?.outcome == .completed)
+    }
+
+    @Test("Killed while locked, relaunched before the target: still running")
+    func relaunchBeforeTargetResumes() {
+        let h = Harness()
+        h.arm(60)
+        h.handle(.closed)
+        h.shut(until: 30)
+        let next = h.relaunch()
+
+        #expect(next.phase == .running)
+        #expect(next.startedAt == h.at(0))
+    }
+
+    @Test("Force-quit after leaving: relaunch settles it Broken at the release")
+    func relaunchAfterLeavingIsBroken() {
+        let h = Harness()
+        h.arm(60)
+        h.handle(.closed)
+        h.shut(until: 20)
+        h.handle(.open)
+        h.shut(until: 50)
+        let next = h.relaunch()
+
+        #expect(next.lastFinished?.outcome == .broken)
+        #expect(next.lastFinished?.elapsed == 20)
+    }
+
+    @Test("A finished block leaves nothing to restore")
+    func nothingInFlightAfterFinish() {
+        let h = Harness()
+        h.arm(60)
+        h.handle(.closed)
+        h.shut(until: 61)
+        h.handle(.open)
+
+        #expect(h.relaunch().phase == .idle)
+    }
+
+    // MARK: - Pro gates survive a refund
+
+    @Test("A refunded user's stored 30s grace falls back to 10s")
+    func refundedGraceFallsBack() {
+        let h = Harness(grace: 30, pro: false)
+        h.arm(60)
+        h.handle(.closed)
+        h.shut(until: 10)
+        h.handle(.open)
+        h.awake(until: 21)
+
+        #expect(h.phase == .broken)
+    }
+
     // MARK: - The lock path: scene phase
 
+    /// A monitor on a throwaway defaults suite, optionally already knowing the
+    /// device has a passcode.
+    private func monitor(passcode: Bool) -> HingeMonitor {
+        let suite = "shut.tests.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        store.removePersistentDomain(forName: suite)
+        store.set(passcode, forKey: PrefKey.passcodeSeen)
+        return HingeMonitor(store: store)
+    }
+
     @Test("Locking the screen commits the block")
-    func backgroundCommits() {
-        let monitor = HingeMonitor()
-        monitor.ingestScenePhase(.background)
-        #expect(monitor.posture == .closed)
+    func lockCommits() {
+        let m = monitor(passcode: true)
+        m.ingestScenePhase(.background)
+        m.deviceLocked()
+        #expect(m.posture == .closed)
+    }
+
+    @Test("The first lock ever seen commits too, and teaches it there's a passcode")
+    func firstLockLatchesPasscode() {
+        let m = monitor(passcode: false)
+        m.ingestScenePhase(.background)
+        m.deviceLocked()
+        #expect(m.posture == .closed)
+        #expect(m.hasPasscode)
+    }
+
+    @Test("With a passcode, going home without locking is a release")
+    func leavingIsARelease() {
+        let m = monitor(passcode: true)
+        m.ingestScenePhase(.background)
+        m.lockWindowElapsed()
+        #expect(m.posture == .open)
+    }
+
+    @Test("... dated when the user left, not when the wait ran out")
+    func leavingIsDatedAtDeparture() {
+        let m = monitor(passcode: true)
+        var t = Date(timeIntervalSinceReferenceDate: 0)
+        m.now = { t }
+        var got: Date?
+        m.onPosture = { _, date in got = date }
+        m.ingestScenePhase(.background)
+        t = t.addingTimeInterval(20)
+        m.lockWindowElapsed()
+        #expect(got == Date(timeIntervalSinceReferenceDate: 0))
+    }
+
+    @Test("Without a known passcode, going to the background counts as locking")
+    func noPasscodeFallsBackToLocking() {
+        let m = monitor(passcode: false)
+        m.ingestScenePhase(.background)
+        m.lockWindowElapsed()
+        #expect(m.posture == .closed)
     }
 
     @Test("Coming back releases it")
     func activeReleases() {
-        let monitor = HingeMonitor()
-        monitor.ingestScenePhase(.background)
-        monitor.ingestScenePhase(.active)
-        #expect(monitor.posture == .open)
+        let m = monitor(passcode: true)
+        var t = Date(timeIntervalSinceReferenceDate: 0)
+        m.now = { t }
+        m.ingestScenePhase(.background)
+        m.deviceLocked()
+        t = t.addingTimeInterval(60)
+        m.ingestScenePhase(.active)
+        #expect(m.posture == .open)
+    }
+
+    @Test("A blip in the background decides nothing")
+    func transientBackgroundIgnored() {
+        let m = monitor(passcode: true)
+        var t = Date(timeIntervalSinceReferenceDate: 0)
+        m.now = { t }
+        var postures: [HingeMonitor.Posture] = []
+        m.onPosture = { p, _ in postures.append(p) }
+        m.ingestScenePhase(.background)
+        t = t.addingTimeInterval(0.5)
+        m.ingestScenePhase(.active)
+        #expect(postures == [.open])
     }
 
     @Test("Control Centre is ignored")
     func inactiveIsIgnored() {
-        let monitor = HingeMonitor()
-        monitor.ingestScenePhase(.background)
-        monitor.ingestScenePhase(.inactive)
-        #expect(monitor.posture == .closed)
+        let m = monitor(passcode: true)
+        m.ingestScenePhase(.background)
+        m.deviceLocked()
+        m.ingestScenePhase(.inactive)
+        #expect(m.posture == .closed)
     }
 
-    @Test("On a foldable, scene phase is ignored entirely")
-    func foldableIgnoresScenePhase() {
-        let monitor = HingeMonitor()
-        monitor.ingestHinge(isFoldable: true, posture: .open)
-        monitor.ingestScenePhase(.background)
-        #expect(monitor.posture == .open)
+    @Test("On a foldable, a lock changes nothing — the hinge still rules")
+    func foldableLockIsNeutral() {
+        let m = monitor(passcode: true)
+        m.ingestHinge(isFoldable: true, posture: .closed)
+        m.ingestScenePhase(.background)
+        m.deviceLocked()
+        #expect(m.posture == .closed)
+    }
+
+    @Test("On a foldable, leaving the app while shut is a release")
+    func foldableLeavingReleases() {
+        let m = monitor(passcode: true)
+        m.ingestHinge(isFoldable: true, posture: .closed)
+        m.ingestScenePhase(.background)
+        m.lockWindowElapsed()
+        #expect(m.posture == .open)
+    }
+
+    @Test("... and coming back while still shut restores the hinge's reading")
+    func foldableReturnRestoresHinge() {
+        let m = monitor(passcode: true)
+        var t = Date(timeIntervalSinceReferenceDate: 0)
+        m.now = { t }
+        m.ingestHinge(isFoldable: true, posture: .closed)
+        m.ingestScenePhase(.background)
+        t = t.addingTimeInterval(5)
+        m.ingestScenePhase(.active)
+        #expect(m.posture == .closed)
     }
 
     @Test("Control Centre does not start an armed block")
     func controlCentreDoesNotStartArmedBlock() {
-        let monitor = HingeMonitor()
+        let m = monitor(passcode: true)
         let h = Harness()
         h.arm(60)
-
-        let before = monitor.posture
-        monitor.ingestScenePhase(.inactive)
-        if monitor.posture != before { h.handle(monitor.posture) }
+        m.onPosture = { p, _ in h.handle(p) }
+        m.ingestScenePhase(.inactive)
 
         #expect(h.phase == .armed)
     }
 
     @Test("... and does not break a running one")
     func controlCentreDoesNotBreakRunningBlock() {
-        let monitor = HingeMonitor()
+        let m = monitor(passcode: true)
         let h = Harness()
         h.arm(60)
         h.handle(.closed)
         h.shut(until: 5)
-
-        let before = monitor.posture
-        monitor.ingestScenePhase(.inactive)
-        if monitor.posture != before { h.handle(monitor.posture) }
+        m.onPosture = { p, _ in h.handle(p) }
+        m.ingestScenePhase(.inactive)
 
         #expect(h.phase == .running)
     }

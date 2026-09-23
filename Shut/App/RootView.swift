@@ -48,9 +48,6 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             hinge.ingestScenePhase(phase)
         }
-        .onChange(of: hinge.posture) { _, posture in
-            engine.handle(posture: posture)
-        }
         .onChange(of: clock.now) { _, _ in
             engine.tick()
         }

@@ -73,6 +73,14 @@ So: **one universal build, two experiences, branched at runtime.**
   where *locking the screen* substitutes for *folding the phone*. Same engine, same
   data model, different trigger and different copy.
 
+**Leaving the app is opening the phone.** Going to the background is ambiguous
+— a lock or a trip to another app — so `HingeMonitor` holds a background task
+open for up to 20s and waits for `protectedDataWillBecomeUnavailable`. Lock seen:
+a commit on the lock path, nothing on Duo. No lock: a release on both, dated to
+when the user left. Without a passcode iOS never reports a lock, so until the
+first one is seen, backgrounding still counts as locking. The simulator has no
+passcode, so it always takes that fallback.
+
 `HingeMonitor` is the only place in the codebase that knows which device it's on.
 Nothing else branches on hardware — everything else consumes
 `HingeMonitor.trigger`, which is either `.fold` or `.lock`. If you find yourself
@@ -212,14 +220,16 @@ additive-only changes to this model from here on.
 
 ## Free vs. Pro
 
-One non-consumable, `xyz.zawmbi.shut.pro`, $4.99, StoreKit 2.
+One non-consumable, `com.zawmbi.shut.pro`, $4.99, StoreKit 2.
 
 **Free, forever, genuinely useful:** unlimited sessions, any preset duration,
 today's total, current streak, the outer-display timer face.
 
 **Pro:** full history beyond today, week and month totals, session labels,
 custom durations, alternate timer faces (sunburst, digits, bar), the Avocado,
-Atomic and Dusk themes, adjustable grace period. Walnut and the ring face are free.
+Atomic and Dusk themes, adjustable grace period, and a forgiving streak (one
+missed day in any seven doesn't reset it). Walnut and the ring face are free, and
+free forgives the first missed day ever, once.
 
 iCloud sync is **cut, not deferred.** SwiftData's CloudKit container is a
 network call, and "nothing leaves your phone" is the product — both claims

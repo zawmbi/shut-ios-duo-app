@@ -34,7 +34,12 @@ struct HomeView: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 20)
         .paperBackground()
-        .onAppear { engine.arm(target: lastTarget) }
+        .onAppear {
+            // A custom length left over from a refunded Pro falls back to the
+            // default, the same rule themes and faces follow.
+            if !pro.isPro && !Presets.all.contains(lastTarget) { lastTarget = 25 * 60 }
+            engine.arm(target: lastTarget)
+        }
         .onChange(of: lastTarget) { _, new in engine.arm(target: new) }
         .sheet(isPresented: $showHistory) { HistoryView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
@@ -93,16 +98,26 @@ struct HomeView: View {
     }
 
     private var subtitle: String {
+        let grace = "\(Prefs.graceSeconds) seconds"
         switch hinge.trigger {
         case .fold:
-            lastTarget == 0
+            return lastTarget == 0
                 ? "The timer runs on the outer display. Open the phone to stop it."
-                : "The timer runs on the outer display. Open it before \(Presets.label(lastTarget)) is up and the block breaks."
+                : "The timer runs on the outer display. Open it before \(Presets.label(lastTarget)) is up and you have \(grace) to shut it again, or the block breaks."
         case .lock:
-            lastTarget == 0
+            return lastTarget == 0
                 ? "Lock the screen to start. Unlock to stop."
-                : "Lock the screen to start. Unlock before \(Presets.label(lastTarget)) is up and the block breaks."
+                : "Lock the screen to start. Unlock or leave the app before \(Presets.label(lastTarget)) is up and you have \(grace) to lock it again, or the block breaks."
         }
+    }
+
+    private var streak: Int {
+        Stats.streak(sessions, forgiveness: pro.isPro ? .weekly : .firstMiss)
+    }
+
+    private var todayText: String {
+        let today = Stats.todayTotal(sessions)
+        return today > 0 ? Stats.format(today) : "0 min"
     }
 
     private var footer: some View {
@@ -110,13 +125,17 @@ struct HomeView: View {
             VStack(spacing: 14) {
                 Rectangle().fill(palette.ink).frame(height: 2)
                 HStack(spacing: 24) {
-                    stat("Today", Stats.format(Stats.todayTotal(sessions)))
+                    stat("Today", todayText)
                     Rectangle().fill(palette.rule).frame(width: 1, height: 32)
-                    stat("Streak", "\(Stats.streak(sessions)) d")
+                    stat("Streak", "\(streak) day\(streak == 1 ? "" : "s")")
                     Spacer()
-                    Image(systemName: "arrow.right")
-                        .font(.plain(.body, .bold))
-                        .foregroundStyle(palette.ink)
+                    HStack(spacing: 6) {
+                        Text("History")
+                            .font(.plain(.subheadline, .bold))
+                        Image(systemName: "arrow.right")
+                            .font(.plain(.subheadline, .bold))
+                    }
+                    .foregroundStyle(palette.ink)
                 }
             }
             .contentShape(Rectangle())
@@ -130,7 +149,6 @@ struct HomeView: View {
     }
 
     private var spokenStats: String {
-        let streak = Stats.streak(sessions)
         let today = Stats.todayTotal(sessions)
         let todayPart = today > 0 ? "today \(Stats.spoken(today))" : "nothing today"
         return "\(todayPart), streak \(streak) day\(streak == 1 ? "" : "s")"

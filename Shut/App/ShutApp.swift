@@ -4,20 +4,36 @@ import UserNotifications
 
 @main
 struct ShutApp: App {
-    @State private var engine = SessionEngine()
-    @State private var hinge = HingeMonitor()
+    @State private var engine: SessionEngine
+    @State private var hinge: HingeMonitor
     @State private var clock = SessionClock()
     @State private var pro = Entitlements()
 
-    private let container: ModelContainer = {
+    private let container: ModelContainer
+
+    init() {
         let schema = Schema([Session.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            container = try ModelContainer(for: schema, configurations: [config])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
+        // Configured here, before any view exists, so a block the last process
+        // left in flight is restored before Home can arm a new one over it.
+        let engine = SessionEngine()
+        engine.configure(context: container.mainContext)
+        _engine = State(initialValue: engine)
+
+        // Wired before the first view too: the hinge reports once on appear, and
+        // that first reading — a phone already shut — must not be dropped.
+        let hinge = HingeMonitor()
+        hinge.onPosture = { [engine] posture, date in
+            engine.handle(posture: posture, at: date)
+        }
+        _hinge = State(initialValue: hinge)
+        UNUserNotificationCenter.current().delegate = ForegroundNotifications.shared
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -27,7 +43,6 @@ struct ShutApp: App {
                 .environment(clock)
                 .environment(pro)
                 .task {
-                    engine.configure(context: container.mainContext)
                     _ = try? await UNUserNotificationCenter.current()
                         .requestAuthorization(options: [.alert, .sound])
                     await pro.load()
@@ -52,5 +67,19 @@ struct ShutApp: App {
         //  Plan B (local notifications, no live face) is NOT needed. See
         //  FINDINGS.md §2 for the measurements.
         // ─────────────────────────────────────────────────────────────────────
+    }
+}
+
+/// On Duo the app is in front on the cover display when a block ends, and iOS
+/// drops a foreground app's notifications unless it says otherwise — which
+/// would silence the end-of-block sound exactly where it matters.
+final class ForegroundNotifications: NSObject, UNUserNotificationCenterDelegate, Sendable {
+    static let shared = ForegroundNotifications()
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        [.banner, .sound]
     }
 }

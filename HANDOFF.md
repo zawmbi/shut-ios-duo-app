@@ -119,8 +119,10 @@ This is the path that ships to every non-Duo iPhone and the one App Review will
 test, so it has to work regardless of what Milestone 0 found.
 
 You will need to set the signing team on the target — it is not in the project.
-Check `PRODUCT_BUNDLE_IDENTIFIER` (`xyz.zawmbi.shut`) against App Store Connect
-before the first archive.
+The bundle ID is `com.zawmbi.shut`, matching the App Store Connect record
+(Apple ID 6814712818, SKU SHUT001); the Pro product is `com.zawmbi.shut.pro` and
+must be created in App Store Connect with exactly that ID. The app icon is
+`Shut/shut.icon`, an Icon Composer file.
 
 **Settled on the first build, 2026-09-20.** The project opened, and the only
 thing that failed was the first item below — two `deinit`s under strict

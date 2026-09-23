@@ -10,6 +10,9 @@ enum PrefKey {
     static let encouragement = "encouragement"
     static let soundOnFinish = "finish.sound"
     static let hasOnboarded  = "onboarded"
+    static let passcodeSeen  = "device.passcode-seen"
+    static let proCached     = "pro.cached"
+    static let inFlight      = "engine.in-flight"
 }
 
 /// Reads the same defaults the `@AppStorage` views write, for the types that
@@ -19,7 +22,10 @@ enum Prefs {
     static let defaultGraceSeconds = 10
     static let graceRange = 3...60
 
+    /// Adjustable grace is Pro. A refunded user falls back to the default,
+    /// whatever is left in defaults — the same rule themes and faces follow.
     static var graceSeconds: Int {
+        guard UserDefaults.standard.bool(forKey: PrefKey.proCached) else { return defaultGraceSeconds }
         let stored = UserDefaults.standard.integer(forKey: PrefKey.graceSeconds)
         guard stored != 0 else { return defaultGraceSeconds }
         return min(graceRange.upperBound, max(graceRange.lowerBound, stored))
@@ -53,7 +59,7 @@ enum Presets {
     static let all: [Int] = [15 * 60, 25 * 60, 45 * 60, 60 * 60, 90 * 60, 0]
 
     static func label(_ seconds: Int) -> String {
-        guard seconds > 0 else { return "Open" }
+        guard seconds > 0 else { return "No limit" }
         let m = seconds / 60
         return m % 60 == 0 && m >= 60 ? "\(m / 60)h" : "\(m)m"
     }

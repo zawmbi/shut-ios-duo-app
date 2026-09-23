@@ -40,7 +40,16 @@ struct ResultView: View {
                 .padding(.top, 4)
                 // The "Kept"/"Broken" line above already says the outcome, so
                 // this reads only the duration and VoiceOver doesn't say it twice.
-                .accessibilityLabel(Stats.spoken(session?.elapsed ?? 0))
+                .accessibilityLabel(spokenDuration)
+
+            // How far a broken block got, so the time that did happen is visible
+            // rather than swallowed by the one word above it.
+            if !kept, let session, session.targetSeconds > 0 {
+                Text("of \(Presets.label(session.targetSeconds))")
+                    .font(.plain(.subheadline, .semibold))
+                    .foregroundStyle(palette.inkSoft)
+                    .padding(.top, 2)
+            }
 
             if let session, session.interruptions > 0 {
                 Text(session.interruptions == 1
@@ -86,6 +95,12 @@ struct ResultView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .paperBackground()
         .onAppear { label = session?.label ?? "" }
+    }
+
+    private var spokenDuration: String {
+        let got = Stats.spoken(session?.elapsed ?? 0)
+        guard !kept, let target = session?.targetSeconds, target > 0 else { return got }
+        return "\(got) of \(Stats.spoken(Double(target)))"
     }
 
     private var labelField: some View {

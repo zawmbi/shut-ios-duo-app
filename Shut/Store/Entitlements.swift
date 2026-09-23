@@ -7,9 +7,13 @@ import StoreKit
 @MainActor
 @Observable
 final class Entitlements {
-    static let proID = "xyz.zawmbi.shut.pro"
+    static let proID = "com.zawmbi.shut.pro"
 
-    private(set) var isPro: Bool = false
+    /// Mirrored into defaults for the non-view code that needs it — the
+    /// engine's grace period — and so a relaunch starts with the last answer.
+    private(set) var isPro: Bool = UserDefaults.standard.bool(forKey: PrefKey.proCached) {
+        didSet { UserDefaults.standard.set(isPro, forKey: PrefKey.proCached) }
+    }
     private(set) var product: Product?
     private(set) var purchasing: Bool = false
     private(set) var loadFailed: Bool = false

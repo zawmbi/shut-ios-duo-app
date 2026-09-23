@@ -28,3 +28,18 @@ Things deliberately cut from v1. Add to this list rather than expanding scope.
   an hours/minutes sheet for Pro; free taps it and gets the paywall.
 - **Sound selection.** One sound, on or off.
 - **Localisation.** English only.
+
+**From the persona review, 2026-09-23 — wanted, not in v1:**
+
+- **Study/break cycles** — "25 on, 5 off, x4" with the break timed on the cover
+  display. The student's top ask; the biggest new feature anyone requested.
+- **Time-blindness haptics** — a soft tap at halfway and at two minutes left,
+  and a short end-of-block haptic rather than an alarm.
+- **Calls shouldn't break a block.** Needs hardware to see what a call does to
+  the hinge and scene phase on Duo.
+- **A cap on "No limit" blocks** so one left overnight stops itself.
+- **Partial minutes in Today.** Broken blocks now show how far they got, but
+  only kept time counts toward totals.
+- **Removing a passcode** after one was seen leaves `hasPasscode` latched, so
+  every lock then reads as leaving the app. Rare; no way to detect it without
+  LocalAuthentication, which is outside the framework list.

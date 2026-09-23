@@ -8,7 +8,6 @@ struct DurationPicker: View {
     @AppStorage(PrefKey.customTarget) private var customTarget: Int = 0
 
     @State private var showCustom = false
-    @State private var showPaywall = false
 
     private let columns = [GridItem(.adaptive(minimum: 72), spacing: 10)]
 
@@ -18,42 +17,44 @@ struct DurationPicker: View {
                 cell(Presets.label(value), selected: seconds == value) {
                     seconds = value
                 }
-                .accessibilityLabel(value == 0 ? "Open ended block" : "\(value / 60) minute block")
+                .accessibilityLabel(value == 0 ? "No limit" : "\(value / 60) minute block")
                 .accessibilityAddTraits(seconds == value ? [.isSelected] : [])
             }
 
-            cell(customLabel, selected: isCustomSelected) {
-                if pro.isPro {
-                    showCustom = true
-                } else {
-                    showPaywall = true
-                }
+            // Free sees the Custom tile locked rather than a paywall: the paywall
+            // lives in exactly two places, History and Settings.
+            cell(customLabel, selected: isCustomSelected, locked: !pro.isPro) {
+                showCustom = true
             }
+            .disabled(!pro.isPro)
             .accessibilityLabel(customAccessibilityLabel)
             .accessibilityAddTraits(isCustomSelected ? [.isSelected] : [])
         }
         .sheet(isPresented: $showCustom) {
             CustomDurationSheet(seconds: $seconds, customTarget: $customTarget)
         }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView()
-        }
     }
 
     private func cell(
         _ label: String,
         selected: Bool,
+        locked: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Text(label)
+            HStack(spacing: 4) {
+                if locked {
+                    Image(systemName: "lock.fill").font(.plain(.caption2, .bold))
+                }
+                Text(label)
+            }
                 .font(.plain(.body, .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(selected ? palette.primary : palette.panel)
-                .foregroundStyle(selected ? palette.onPrimary : palette.ink)
+                .foregroundStyle(selected ? palette.onPrimary : (locked ? palette.inkSoft : palette.ink))
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -74,7 +75,7 @@ struct DurationPicker: View {
     }
 
     private var customAccessibilityLabel: String {
-        guard pro.isPro else { return "Custom length, requires Shut Pro" }
+        guard pro.isPro else { return "Custom length, requires Shut Pro. Available from Settings." }
         return customTarget > 0
             ? "Custom length, \(customTarget / 60) minutes"
             : "Set a custom length"

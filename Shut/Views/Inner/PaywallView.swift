@@ -12,7 +12,8 @@ struct PaywallView: View {
         ("Custom lengths", "Any duration, not just the presets."),
         ("Faces", "Sunburst, digits and bar, as well as the ring."),
         ("Themes", "Avocado, Atomic and Dusk, as well as Walnut."),
-        ("Grace period", "Set how long you get before a block breaks.")
+        ("Grace period", "Set how long you get before a block breaks."),
+        ("Forgiving streak", "One missed day a week doesn't reset it. Free forgives the first one.")
     ]
 
     var body: some View {
