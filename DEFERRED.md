@@ -9,8 +9,8 @@ Things deliberately cut from v1. Add to this list rather than expanding scope.
   that `SessionEngine` did *not* take an injectable date as this file once
   claimed — it read `Date.now` directly in six places, and testing it at all
   meant giving it a clock seam. `Stats` really was injectable.
-- **Milestone 0.** Still entirely open; see `FINDINGS.md`. Nothing in this tree
-  has been compiled.
+- ~~**Milestone 0.**~~ Answered 2026-09-21, and the fold was driven by hand in
+  Device Hub on 2026-09-23. See `FINDINGS.md`.
 
 - **Recording / screen-time integration.** Shut reports its own blocks only. No
   `DeviceActivity`, no `FamilyControls` — both need an entitlement request and

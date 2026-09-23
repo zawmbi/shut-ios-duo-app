@@ -3,13 +3,15 @@ import SwiftUI
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(Entitlements.self) private var pro
+    @Environment(\.palette) private var palette
 
     private let features = [
         ("Full history", "Every block you've kept, not just today's."),
         ("Weeks and months", "Totals and trends over time."),
         ("Labels", "Tag a block so you know what it went to."),
         ("Custom lengths", "Any duration, not just the presets."),
-        ("Faces", "Digits and bar, as well as the ring."),
+        ("Faces", "Sunburst, digits and bar, as well as the ring."),
+        ("Themes", "Avocado, Atomic and Dusk, as well as Walnut."),
         ("Grace period", "Set how long you get before a block breaks.")
     ]
 
@@ -20,28 +22,29 @@ struct PaywallView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("One payment").labelStyle()
                         Text("Shut Pro")
-                            .font(.rounded(.largeTitle, .heavy))
-                            .foregroundStyle(Theme.ink)
+                            .font(.plain(.largeTitle, .black))
+                            .foregroundStyle(palette.ink)
                         Text("No subscription. Nothing leaves your phone, before or after.")
                             .font(.plain(.subheadline))
-                            .foregroundStyle(Theme.inkSoft)
+                            .foregroundStyle(palette.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(features, id: \.0) { title, detail in
                             HStack(alignment: .top, spacing: 12) {
-                                Image(systemName: "checkmark")
-                                    .font(.plain(.caption, .bold))
-                                    .foregroundStyle(Theme.green)
-                                    .padding(.top, 4)
+                                Circle()
+                                    .fill(palette.secondary)
+                                    .frame(width: 10, height: 10)
+                                    .padding(.top, 5)
+                                    .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(title)
-                                        .font(.rounded(.callout, .semibold))
-                                        .foregroundStyle(Theme.ink)
+                                        .font(.plain(.callout, .bold))
+                                        .foregroundStyle(palette.ink)
                                     Text(detail)
                                         .font(.plain(.footnote))
-                                        .foregroundStyle(Theme.inkSoft)
+                                        .foregroundStyle(palette.inkSoft)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
@@ -50,30 +53,31 @@ struct PaywallView: View {
                 }
                 .padding(24)
             }
-            .creamBackground()
+            .paperBackground()
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 10) {
                     Button {
                         Task { if await pro.purchase() { dismiss() } }
                     } label: {
                         Text(pro.purchasing ? "…" : "Buy for \(pro.priceText)")
-                            .font(.rounded(.body, .semibold))
-                            .foregroundStyle(Theme.cream)
+                            .font(.plain(.body, .bold))
+                            .tracking(1)
+                            .foregroundStyle(palette.onPrimary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Theme.green)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(.vertical, 18)
+                            .background(palette.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .disabled(pro.purchasing || pro.product == nil)
 
                     Button("Restore purchase") { Task { await pro.restore() } }
                         .font(.plain(.footnote))
-                        .foregroundStyle(Theme.inkSoft)
+                        .foregroundStyle(palette.inkSoft)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 16)
-                .background(Theme.cream)
+                .background(palette.paper)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

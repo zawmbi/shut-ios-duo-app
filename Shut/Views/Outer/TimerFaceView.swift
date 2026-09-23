@@ -2,15 +2,18 @@ import SwiftUI
 
 /// What the outer display shows while the phone is shut.
 ///
-/// Deliberately dark where the rest of the app is cream: this face is read in a
-/// dark room on a display that stays lit for the length of a block, so the ink
-/// ground is both a battery decision and a legibility one.
+/// Always dark, whatever the theme: this face is read in a dark room on a
+/// display that stays lit for the length of a block, so the dark ground is both
+/// a battery decision and a legibility one. Each theme brings its own face
+/// palette; Dusk's is true black.
 struct TimerFaceView: View {
     @Environment(SessionEngine.self) private var engine
     @Environment(SessionClock.self) private var clock
     @Environment(Entitlements.self) private var pro
+    @Environment(\.palette) private var palette
 
     @AppStorage(PrefKey.faceStyle) private var faceRaw: String = FaceStyle.ring.rawValue
+    @AppStorage(PrefKey.encouragement) private var encourage = false
 
     private var style: FaceStyle {
         let chosen = FaceStyle(rawValue: faceRaw) ?? .ring
@@ -19,19 +22,31 @@ struct TimerFaceView: View {
 
     var body: some View {
         ZStack {
-            Theme.ink.ignoresSafeArea()
+            palette.face.ignoresSafeArea()
 
             GeometryReader { proxy in
-                // The outer display carries a camera occlusion; framework views
-                // work around it automatically, but this face is custom, so it
-                // asks where the reserved regions are and keeps clear of them.
+                // The cover display reported no reserved regions when measured
+                // (FINDINGS.md §3); its status bar arrives as safe area, which
+                // the GeometryReader already respects. This stays so a region
+                // that does turn up on hardware is kept clear of.
                 let inset = ReservedInsets.resolve(proxy)
 
-                VStack(spacing: 18) {
+                VStack(spacing: 28) {
                     switch style {
-                    case .ring:   ring
-                    case .digits: digits
-                    case .bar:    bar
+                    case .ring:     ring
+                    case .sunburst: sunburst
+                    case .digits:   digits
+                    case .bar:      bar
+                    }
+
+                    if encourage {
+                        Text(encouragement)
+                            .font(.plain(.subheadline, .medium))
+                            .foregroundStyle(palette.faceSoft)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .padding(.horizontal, 24)
+                            .transition(.opacity)
                     }
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
@@ -42,7 +57,7 @@ struct TimerFaceView: View {
         .onAppear { clock.start() }
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
-        // The face is one number drawn three ways. As written the digits are
+        // The face is one number drawn four ways. As written the drawing is
         // decorative to VoiceOver, so the whole face becomes a single element
         // that reads the time remaining and re-reads it as it changes.
         .accessibilityElement(children: .ignore)
@@ -53,11 +68,17 @@ struct TimerFaceView: View {
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
     }
 
+    private var encouragement: String {
+        Encouragement.line(
+            for: .running(progress: engine.progress, openEnded: engine.targetSeconds == 0),
+            seed: engine.startedAt
+        )
+    }
+
     private var spokenTime: String {
-        if let remaining = engine.remaining {
-            return "\(Stats.spoken(remaining)) left"
-        }
-        return "\(Stats.spoken(engine.elapsed)) elapsed"
+        let time = engine.remaining.map { "\(Stats.spoken($0)) left" }
+            ?? "\(Stats.spoken(engine.elapsed)) elapsed"
+        return encourage ? "\(time). \(encouragement)" : time
     }
 
     private var timeText: String {
@@ -67,64 +88,110 @@ struct TimerFaceView: View {
         return Stats.clock(engine.elapsed)
     }
 
+    private var caption: String { engine.targetSeconds == 0 ? "Elapsed" : "Left" }
+
+    private func captionText() -> some View {
+        Text(caption)
+            .font(.plain(.caption2, .bold))
+            .tracking(2.4)
+            .textCase(.uppercase)
+            .foregroundStyle(palette.faceSoft)
+    }
+
+    private func numerals(_ size: CGFloat, color: Color? = nil) -> some View {
+        Text(timeText)
+            .font(.numerals(size))
+            .foregroundStyle(color ?? palette.faceInk)
+            .monospacedDigit()
+            .minimumScaleFactor(0.5)
+            .lineLimit(1)
+            .contentTransition(.numericText(countsDown: true))
+    }
+
     private var ring: some View {
         ZStack {
             RingProgress(
                 progress: engine.progress,
-                lineWidth: 8,
-                indeterminate: engine.targetSeconds == 0
+                indeterminate: engine.targetSeconds == 0,
+                track: palette.faceTrack,
+                fill: palette.faceAccent,
+                ticks: palette.faceSoft.opacity(0.6)
             )
-            .frame(width: 168, height: 168)
+            .frame(width: 236, height: 236)
+
+            VStack(spacing: 4) {
+                numerals(44)
+                captionText()
+            }
+            .padding(.horizontal, 44)
+        }
+    }
+
+    private var sunburst: some View {
+        ZStack {
+            Sunburst(
+                progress: engine.progress,
+                indeterminate: engine.targetSeconds == 0,
+                lit: palette.faceAccent,
+                unlit: palette.faceTrack,
+                hub: palette.faceAccent2
+            )
+            .frame(width: 260, height: 260)
 
             VStack(spacing: 2) {
-                Text(timeText)
-                    .font(.system(size: 42, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Theme.cream)
-                    .monospacedDigit()
-                    .contentTransition(.numericText(countsDown: true))
-                Text(engine.targetSeconds == 0 ? "elapsed" : "left")
-                    .font(.rounded(.caption2, .semibold))
-                    .tracking(1.4)
+                numerals(34, color: palette.face)
+                Text(caption)
+                    .font(.plain(.caption2, .heavy))
+                    .tracking(2)
                     .textCase(.uppercase)
-                    .foregroundStyle(Theme.cream.opacity(0.45))
+                    .foregroundStyle(palette.face.opacity(0.7))
             }
+            .frame(width: 124)
         }
     }
 
     private var digits: some View {
-        Text(timeText)
-            .font(.system(size: 76, weight: .heavy, design: .rounded))
-            .foregroundStyle(Theme.cream)
-            .monospacedDigit()
-            .minimumScaleFactor(0.5)
-            .contentTransition(.numericText(countsDown: true))
+        VStack(spacing: 14) {
+            HStack(spacing: 8) {
+                Circle().fill(palette.faceAccent).frame(width: 10, height: 10)
+                Circle().fill(palette.faceAccent2).frame(width: 10, height: 10)
+                Rectangle().fill(palette.faceTrack).frame(height: 2)
+            }
+            .frame(width: 200)
+            numerals(80)
+            captionText()
+        }
+        .padding(.horizontal, 20)
     }
 
+    /// Twelve flat tiles, filled left to right.
     private var bar: some View {
-        VStack(spacing: 14) {
-            Text(timeText)
-                .font(.system(size: 38, weight: .heavy, design: .rounded))
-                .foregroundStyle(Theme.cream)
-                .monospacedDigit()
-            GeometryReader { p in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.cream.opacity(0.15))
-                    Capsule()
-                        .fill(Theme.greenLight)
-                        .frame(width: max(4, p.size.width * engine.progress))
+        let segments = 12
+        let lit = engine.targetSeconds == 0
+            ? segments
+            : Int((engine.progress * Double(segments)).rounded(.up))
+        return VStack(spacing: 18) {
+            numerals(52)
+            HStack(spacing: 4) {
+                ForEach(0..<segments, id: \.self) { i in
+                    Rectangle()
+                        .fill(i < lit
+                              ? (i.isMultiple(of: 4) ? palette.faceAccent2 : palette.faceAccent)
+                              : palette.faceTrack)
+                        .frame(height: 22)
                 }
             }
-            .frame(height: 8)
+            .frame(maxWidth: 260)
             .padding(.horizontal, 28)
+            captionText()
         }
     }
 }
 
 /// Keeps custom drawing clear of the fold and the cameras.
 ///
-/// VERIFY (Milestone 0): confirm the `reservedRegions` signature and the kind
-/// case names against the SDK. Until `-D DUO_SDK` is set this returns zero,
-/// which is correct on every non-foldable iPhone.
+/// Signature verified against the iOS 27.1 SDK (FINDINGS.md §3). Without
+/// `-D DUO_SDK` this returns zero, which is correct on every non-foldable iPhone.
 enum ReservedInsets {
     static func resolve(_ proxy: GeometryProxy) -> EdgeInsets {
         #if DUO_SDK

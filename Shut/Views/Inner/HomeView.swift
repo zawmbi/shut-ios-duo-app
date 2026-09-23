@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(SessionEngine.self) private var engine
     @Environment(HingeMonitor.self) private var hinge
     @Environment(Entitlements.self) private var pro
+    @Environment(\.palette) private var palette
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
 
     @AppStorage(PrefKey.lastTarget) private var lastTarget: Int = 25 * 60
@@ -32,7 +33,7 @@ struct HomeView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 20)
-        .creamBackground()
+        .paperBackground()
         .onAppear { engine.arm(target: lastTarget) }
         .onChange(of: lastTarget) { _, new in engine.arm(target: new) }
         .sheet(isPresented: $showHistory) { HistoryView() }
@@ -40,34 +41,55 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .center, spacing: 12) {
+            FoldMark()
             Text("Shut")
-                .font(.rounded(.largeTitle, .heavy))
-                .foregroundStyle(Theme.ink)
+                .font(.plain(.title2, .black))
+                .tracking(6)
+                .textCase(.uppercase)
+                .foregroundStyle(palette.ink)
             Spacer()
             Button { showSettings = true } label: {
                 Image(systemName: "slider.horizontal.3")
                     .font(.plain(.body, .semibold))
-                    .foregroundStyle(Theme.inkSoft)
+                    .foregroundStyle(palette.inkSoft)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Settings")
         }
     }
 
+    /// A flat block of the theme's primary colour with two shapes set into its
+    /// corner — the one bold composition on the screen.
     private var instruction: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(hinge.trigger.verb)
-                .font(.rounded(.title, .bold))
-                .foregroundStyle(Theme.green)
+                .font(.plain(.title, .heavy))
+                .foregroundStyle(palette.onPrimary)
             Text(subtitle)
-                .font(.plain(.subheadline))
-                .foregroundStyle(Theme.inkSoft)
+                .font(.plain(.subheadline, .medium))
+                .foregroundStyle(palette.onPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(Theme.creamDeep)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.vertical, 24)
+        .padding(.leading, 22)
+        .padding(.trailing, 88)
+        .background(alignment: .bottomTrailing) {
+            ZStack(alignment: .bottomTrailing) {
+                palette.primary
+                Circle()
+                    .fill(palette.secondary)
+                    .frame(width: 120, height: 120)
+                    .offset(x: 44, y: -30)
+                HalfDisc()
+                    .fill(palette.tertiary)
+                    .frame(width: 84, height: 42)
+                    .offset(x: -18, y: 0)
+            }
+            .accessibilityHidden(true)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     private var subtitle: String {
@@ -85,15 +107,19 @@ struct HomeView: View {
 
     private var footer: some View {
         Button { showHistory = true } label: {
-            HStack(spacing: 20) {
-                stat("Today", Stats.format(Stats.todayTotal(sessions)))
-                Divider().frame(height: 28).overlay(Theme.rule)
-                stat("Streak", "\(Stats.streak(sessions)) d")
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.plain(.footnote, .semibold))
-                    .foregroundStyle(Theme.inkSoft)
+            VStack(spacing: 14) {
+                Rectangle().fill(palette.ink).frame(height: 2)
+                HStack(spacing: 24) {
+                    stat("Today", Stats.format(Stats.todayTotal(sessions)))
+                    Rectangle().fill(palette.rule).frame(width: 1, height: 32)
+                    stat("Streak", "\(Stats.streak(sessions)) d")
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                        .font(.plain(.body, .bold))
+                        .foregroundStyle(palette.ink)
+                }
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         // The button's own label would otherwise replace the two figures
@@ -114,8 +140,8 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label).labelStyle()
             Text(value)
-                .font(.rounded(.title3, .bold))
-                .foregroundStyle(Theme.ink)
+                .font(.plain(.title2, .heavy))
+                .foregroundStyle(palette.ink)
                 .monospacedDigit()
         }
     }

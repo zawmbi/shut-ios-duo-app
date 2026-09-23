@@ -310,6 +310,13 @@ stays exactly where it is — it just gets presented by `RootView` when
       a swap are all still unobserved. **Getting Simulator.app onto this machine
       is the next real task**, and it is what unblocks the rest of Milestone 0.
 
+      **Done, 2026-09-23.** Driven by hand in Device Hub, `DUO_SDK` build. The
+      end-of-day-1 test passes with the fold: arm 1 min, shut, wait, open →
+      **Kept — 1m**; arm, shut, open, let grace expire → **Broken**. So
+      `onHingeChange` does deliver across the cover/inner swap and the engine
+      follows it. The `.division` region in the book pose was not reported on
+      and is still unobserved.
+
 - [x] **A second limit worth knowing.** The installed iOS 27.1 runtime supports
       **exactly one device type: iPhone Duo.** `simctl` refuses to create an
       iPhone 17, 17 Pro, 18 Pro or 17e against it. So the nil-hinge branch — the

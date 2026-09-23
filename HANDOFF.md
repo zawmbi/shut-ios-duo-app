@@ -2,11 +2,9 @@
 
 State of the branch `claude/new-session-of2kze`, and what to do on the Mac.
 
-**Read this first: nothing in this repository has been compiled.** The Xcode
-project, and every change after the source tree first landed, was written in a
-Linux container with no Swift toolchain and no Xcode. The Swift is unverified,
-the project file has never been opened, and the first build should be expected
-to need fixing. That is the normal state of this branch, not a warning sign.
+**Current as of 2026-09-23:** the tree builds on both Xcodes, `ShutTests` is
+green, Milestone 0 is answered (`FINDINGS.md`), and the fold has been driven by
+hand in Device Hub. The notes below about "nothing compiled" are history.
 
 ---
 
@@ -32,10 +30,10 @@ to need fixing. That is the normal state of this branch, not a warning sign.
 
 ## What is not done
 
-- **Milestone 0.** Entirely open. Every question in `FINDINGS.md` is unanswered
-  and both VERIFY banners stand. `-D DUO_SDK` is deliberately not set.
-- No compile, ever. No simulator run. No StoreKit test.
-- No XCTest target. No app icon art. No screenshots or metadata.
+- `-D DUO_SDK` is still not set in the project — pass it per build. Setting it
+  project-wide would break a 27.0 archive, which lacks the hinge API.
+- No StoreKit test yet.
+- No app icon art. No screenshots or metadata.
 
 ---
 

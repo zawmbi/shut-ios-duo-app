@@ -7,6 +7,8 @@ struct InterruptView: View {
     @Environment(SessionEngine.self) private var engine
     @Environment(HingeMonitor.self) private var hinge
     @Environment(SessionClock.self) private var clock
+    @Environment(\.palette) private var palette
+    @AppStorage(PrefKey.encouragement) private var encourage = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,12 +16,24 @@ struct InterruptView: View {
 
             Text(hinge.trigger.breakVerb).labelStyle()
 
-            Text(Stats.clock(engine.graceRemaining))
-                .font(.system(size: 76, weight: .heavy, design: .rounded))
-                .foregroundStyle(Theme.ink)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .padding(.top, 4)
+            ZStack {
+                // Grace drains as a ring of ticks, one per second of the
+                // allowance, so the countdown reads at a glance.
+                GraceTicks(
+                    total: max(1, engine.graceSeconds),
+                    remaining: engine.graceRemaining,
+                    lit: palette.tertiary,
+                    unlit: palette.rule
+                )
+                .frame(width: 240, height: 240)
+
+                Text(Stats.clock(engine.graceRemaining))
+                    .font(.numerals(64, .heavy))
+                    .foregroundStyle(palette.ink)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            .padding(.top, 16)
                 .accessibilityLabel(
                     "\(Stats.spoken(engine.graceRemaining)) to \(hinge.trigger == .fold ? "fold" : "lock") it again"
                 )
@@ -28,33 +42,45 @@ struct InterruptView: View {
             Text(remainingLine)
                 .accessibilityLabel(spokenRemainingLine)
                 .font(.plain(.callout))
-                .foregroundStyle(Theme.inkSoft)
+                .foregroundStyle(palette.inkSoft)
                 .multilineTextAlignment(.center)
-                .padding(.top, 10)
+                .padding(.top, 16)
                 .padding(.horizontal, 32)
+
+            if encourage {
+                Text(Encouragement.line(for: .grace(hinge.trigger), seed: engine.startedAt))
+                    .font(.plain(.callout, .semibold))
+                    .foregroundStyle(palette.primaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 6)
+                    .padding(.horizontal, 32)
+            }
 
             Spacer()
 
             VStack(spacing: 10) {
                 Text(hinge.trigger == .fold ? "Fold it again to carry on." : "Lock it again to carry on.")
-                    .font(.plain(.subheadline, .medium))
-                    .foregroundStyle(Theme.green)
+                    .font(.plain(.subheadline, .bold))
+                    .foregroundStyle(palette.primaryText)
 
                 Button("Break it") {
                     engine.breakNow()
                 }
-                .font(.rounded(.subheadline, .semibold))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.vertical, 12)
-                .padding(.horizontal, 28)
-                .background(Theme.creamDeep)
-                .clipShape(Capsule())
+                .font(.plain(.subheadline, .bold))
+                .tracking(1)
+                .foregroundStyle(palette.ink)
+                .padding(.vertical, 14)
+                .padding(.horizontal, 32)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .stroke(palette.ink, lineWidth: 2)
+                )
                 .buttonStyle(.plain)
             }
             .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .creamBackground()
+        .paperBackground()
         .onChange(of: clock.now) { _, _ in engine.tick() }
     }
 
@@ -70,5 +96,27 @@ struct InterruptView: View {
             return "\(Stats.spoken(engine.elapsed)) in. Nothing is lost yet."
         }
         return "\(Stats.spoken(remaining)) left. Nothing is lost yet."
+    }
+}
+
+private struct GraceTicks: View {
+    let total: Int
+    let remaining: TimeInterval
+    let lit: Color
+    let unlit: Color
+
+    var body: some View {
+        let count = min(total, 60)
+        let on = Int((remaining / Double(total) * Double(count)).rounded(.up))
+        ZStack {
+            ForEach(0..<count, id: \.self) { i in
+                Capsule()
+                    .fill(i < on ? lit : unlit)
+                    .frame(width: 4, height: 18)
+                    .offset(y: -111)
+                    .rotationEffect(.degrees(Double(i) / Double(count) * 360))
+            }
+        }
+        .accessibilityHidden(true)
     }
 }

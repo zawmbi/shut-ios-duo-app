@@ -4,6 +4,7 @@ struct DurationPicker: View {
     @Binding var seconds: Int
 
     @Environment(Entitlements.self) private var pro
+    @Environment(\.palette) private var palette
     @AppStorage(PrefKey.customTarget) private var customTarget: Int = 0
 
     @State private var showCustom = false
@@ -46,14 +47,14 @@ struct DurationPicker: View {
     ) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.rounded(.body, .semibold))
+                .font(.plain(.body, .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(selected ? Theme.green : Theme.creamDeep)
-                .foregroundStyle(selected ? Theme.cream : Theme.ink)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.vertical, 16)
+                .background(selected ? palette.primary : palette.panel)
+                .foregroundStyle(selected ? palette.onPrimary : palette.ink)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -85,6 +86,7 @@ private struct CustomDurationSheet: View {
     @Binding var customTarget: Int
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.palette) private var palette
 
     @State private var hours = 0
     @State private var minutes = 30
@@ -113,14 +115,14 @@ private struct CustomDurationSheet: View {
 
                 Text(total == 0 ? "At least one minute." : Presets.label(total))
                     .font(.rounded(.body, .semibold))
-                    .foregroundStyle(total == 0 ? Theme.inkSoft : Theme.ink)
+                    .foregroundStyle(total == 0 ? palette.inkSoft : palette.ink)
                     .monospacedDigit()
 
                 Spacer()
             }
             .padding(.top, 12)
             .frame(maxWidth: .infinity)
-            .creamBackground()
+            .paperBackground()
             .navigationTitle("Custom length")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

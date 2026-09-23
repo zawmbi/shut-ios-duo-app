@@ -218,7 +218,8 @@ One non-consumable, `xyz.zawmbi.shut.pro`, $4.99, StoreKit 2.
 today's total, current streak, the outer-display timer face.
 
 **Pro:** full history beyond today, week and month totals, session labels,
-custom durations, alternate timer faces, adjustable grace period.
+custom durations, alternate timer faces (sunburst, digits, bar), the Avocado,
+Atomic and Dusk themes, adjustable grace period. Walnut and the ring face are free.
 
 iCloud sync is **cut, not deferred.** SwiftData's CloudKit container is a
 network call, and "nothing leaves your phone" is the product — both claims
@@ -240,7 +241,25 @@ and never scolds.
 - Bad: "Great job! 🎉 You crushed that focus session!"
 - Bad: "You gave in. Try harder next time."
 
-No emoji anywhere in the UI. System font, SF Rounded for the timer face only.
+**Encouragement is opt-in.** Settings has an "Encouragement" toggle, off by
+default and free. When on, the timer face, grace screen and result add one short
+line from `Views/Shared/Encouragement.swift` — "Past halfway.", "Well kept.",
+"It happens. The next one starts clean." Warmer, but held to the same rules:
+no emoji, no exclamation marks, never scolds. Off, the voice above is the whole
+app.
+
+No emoji anywhere in the UI. System font, set heavy and tracked wide; SF Rounded
+for timer numerals only.
+
+## Look
+
+Mid-century modern, kept clean: warm paper grounds, flat blocks of colour, 6pt
+corners, no gradients, no shadows. Circles and half discs are the only
+decorative shapes (`FoldMark`, the home card). Colours come from the
+`\.palette` environment value, which `RootView` sets from the chosen theme —
+never hard-code a colour in a view. Each theme has an inner palette and a
+cover-display palette, and the cover face is always dark. `secondary` and
+`tertiary` are for shapes only; small text in the accent hue uses `primaryText`.
 
 ---
 

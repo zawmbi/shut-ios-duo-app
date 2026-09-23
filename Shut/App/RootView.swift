@@ -12,6 +12,16 @@ struct RootView: View {
     @Environment(SessionClock.self) private var clock
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(Entitlements.self) private var pro
+
+    @AppStorage(PrefKey.theme) private var themeRaw: String = ThemeID.walnut.rawValue
+
+    /// A Pro theme left in defaults after a refund falls back to Walnut, the
+    /// same rule the timer faces follow.
+    private var palette: Palette {
+        let chosen = ThemeID(rawValue: themeRaw) ?? .walnut
+        return (chosen.isPro && !pro.isPro) ? ThemeID.walnut.palette : chosen.palette
+    }
 
     var body: some View {
         Group {
@@ -31,7 +41,9 @@ struct RootView: View {
             }
         }
         .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: engine.phase)
-        .preferredColorScheme(Theme.scheme)
+        .environment(\.palette, palette)
+        .tint(palette.primary)
+        .preferredColorScheme(palette.scheme)
         .hingeAware(hinge)
         .onChange(of: scenePhase) { _, phase in
             hinge.ingestScenePhase(phase)
