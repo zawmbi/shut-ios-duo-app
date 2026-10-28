@@ -7,6 +7,11 @@ enum PrefKey {
     static let customTarget  = "target.custom"
     static let faceStyle     = "face.style"
     static let theme         = "theme"
+    static let customColors  = "theme.custom"
+    static let textFace      = "look.text"
+    static let numeralFace   = "look.numerals"
+    static let numeralWeight = "look.weight"
+    static let corners       = "look.corners"
     static let encouragement = "encouragement"
     static let soundOnFinish = "finish.sound"
     static let hasOnboarded  = "onboarded"
@@ -40,7 +45,7 @@ enum Prefs {
 }
 
 enum FaceStyle: String, CaseIterable, Identifiable {
-    case ring, sunburst, digits, bar
+    case ring, sunburst, digits, bar, dots, hairline
     var id: String { rawValue }
     var display: String {
         switch self {
@@ -48,6 +53,8 @@ enum FaceStyle: String, CaseIterable, Identifiable {
         case .sunburst: "Sunburst"
         case .digits:   "Digits"
         case .bar:      "Bar"
+        case .dots:     "Dots"
+        case .hairline: "Hairline"
         }
     }
     /// Free tier gets the ring only.

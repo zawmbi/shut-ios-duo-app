@@ -32,12 +32,18 @@ struct TimerFaceView: View {
                 let inset = ReservedInsets.resolve(proxy)
 
                 VStack(spacing: 28) {
-                    switch style {
-                    case .ring:     ring
-                    case .sunburst: sunburst
-                    case .digits:   digits
-                    case .bar:      bar
-                    }
+                    FaceArt(
+                        style: style,
+                        progress: engine.progress,
+                        indeterminate: engine.targetSeconds == 0,
+                        time: timeText,
+                        caption: caption
+                    )
+                    // scaleEffect doesn't take up room, so a scaled face
+                    // reserves its own height or the caption below would
+                    // sit under it.
+                    .scaleEffect(Self.scale(for: proxy.size))
+                    .frame(height: Self.scale(for: proxy.size) > 1 ? 280 * Self.scale(for: proxy.size) : nil)
 
                     if encourage {
                         Text(encouragement)
@@ -90,6 +96,35 @@ struct TimerFaceView: View {
 
     private var caption: String { engine.targetSeconds == 0 ? "Elapsed" : "Left" }
 
+    /// The faces are drawn for a phone. Any screen bigger than the largest
+    /// iPhone gets them scaled up to match; nothing smaller changes.
+    static func scale(for size: CGSize) -> CGFloat {
+        max(1, min(size.width / 440, size.height / 700))
+    }
+}
+
+/// One face, drawn from plain values rather than the engine, so the appearance
+/// editor can show every face without a block running.
+struct FaceArt: View {
+    let style: FaceStyle
+    let progress: Double
+    let indeterminate: Bool
+    let time: String
+    let caption: String
+
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        switch style {
+        case .ring:     ring
+        case .sunburst: sunburst
+        case .digits:   digits
+        case .bar:      bar
+        case .dots:     dots
+        case .hairline: hairline
+        }
+    }
+
     private func captionText() -> some View {
         Text(caption)
             .font(.plain(.caption2, .bold))
@@ -99,8 +134,8 @@ struct TimerFaceView: View {
     }
 
     private func numerals(_ size: CGFloat, color: Color? = nil) -> some View {
-        Text(timeText)
-            .font(.numerals(size))
+        Text(time)
+            .numeralFont(size)
             .foregroundStyle(color ?? palette.faceInk)
             .monospacedDigit()
             .minimumScaleFactor(0.5)
@@ -111,8 +146,8 @@ struct TimerFaceView: View {
     private var ring: some View {
         ZStack {
             RingProgress(
-                progress: engine.progress,
-                indeterminate: engine.targetSeconds == 0,
+                progress: progress,
+                indeterminate: indeterminate,
                 track: palette.faceTrack,
                 fill: palette.faceAccent,
                 ticks: palette.faceSoft.opacity(0.6)
@@ -130,8 +165,8 @@ struct TimerFaceView: View {
     private var sunburst: some View {
         ZStack {
             Sunburst(
-                progress: engine.progress,
-                indeterminate: engine.targetSeconds == 0,
+                progress: progress,
+                indeterminate: indeterminate,
                 lit: palette.faceAccent,
                 unlit: palette.faceTrack,
                 hub: palette.faceAccent2
@@ -164,12 +199,59 @@ struct TimerFaceView: View {
         .padding(.horizontal, 20)
     }
 
+    /// Twelve discs round the time, filled clockwise.
+    private var dots: some View {
+        let count = 12
+        let lit = indeterminate ? count : Int((progress * Double(count)).rounded(.up))
+        return ZStack {
+            ForEach(0..<count, id: \.self) { i in
+                Circle()
+                    .fill(i < lit ? (i.isMultiple(of: 3) ? palette.faceAccent2 : palette.faceAccent) : palette.faceTrack)
+                    .frame(width: 26, height: 26)
+                    .offset(y: -110)
+                    .rotationEffect(.degrees(Double(i) / Double(count) * 360))
+            }
+            VStack(spacing: 4) {
+                numerals(46)
+                captionText()
+            }
+            .padding(.horizontal, 60)
+        }
+        .frame(width: 250, height: 250)
+        .accessibilityHidden(true)
+    }
+
+    /// A single fine line and a bead riding it, with the time large inside.
+    private var hairline: some View {
+        let end = indeterminate ? 1 : max(0.001, min(1, progress))
+        return ZStack {
+            Circle()
+                .stroke(palette.faceTrack, lineWidth: 1.5)
+            Circle()
+                .trim(from: 0, to: end)
+                .stroke(palette.faceAccent, lineWidth: 1.5)
+                .rotationEffect(.degrees(-90))
+            Circle()
+                .fill(palette.faceAccent2)
+                .frame(width: 10, height: 10)
+                .offset(y: -120)
+                .rotationEffect(.degrees(end * 360))
+            VStack(spacing: 10) {
+                numerals(56)
+                Rectangle().fill(palette.faceSoft).frame(width: 28, height: 1)
+                captionText()
+            }
+            .padding(.horizontal, 36)
+        }
+        .frame(width: 240, height: 240)
+    }
+
     /// Twelve flat tiles, filled left to right.
     private var bar: some View {
         let segments = 12
-        let lit = engine.targetSeconds == 0
+        let lit = indeterminate
             ? segments
-            : Int((engine.progress * Double(segments)).rounded(.up))
+            : Int((progress * Double(segments)).rounded(.up))
         return VStack(spacing: 18) {
             numerals(52)
             HStack(spacing: 4) {

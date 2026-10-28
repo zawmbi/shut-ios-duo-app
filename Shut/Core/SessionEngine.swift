@@ -56,6 +56,12 @@ final class SessionEngine {
     @ObservationIgnored
     var store: UserDefaults = .standard
 
+    /// Whether to schedule the end-of-block notification. Off only for staged
+    /// screenshots, where adding a request makes iOS put up the permission
+    /// prompt over the capture.
+    @ObservationIgnored
+    var schedulesNotifications = true
+
     private var context: ModelContext?
     private var lastPosture: HingeMonitor.Posture = .open
     /// When the user released mid-block. A broken or abandoned block ended
@@ -248,7 +254,7 @@ final class SessionEngine {
     /// never that the block was kept: if the process dies, this still fires,
     /// and it must not claim something nobody checked.
     private func scheduleNotification() {
-        guard let remaining, remaining > 0 else { return }
+        guard schedulesNotifications, let remaining, remaining > 0 else { return }
         let minutes = targetSeconds / 60
         let content = UNMutableNotificationContent()
         content.title = "Time's up."

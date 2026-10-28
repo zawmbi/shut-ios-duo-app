@@ -168,9 +168,10 @@ Shut/
     Session.swift              @Model
     Prefs.swift                @AppStorage wrapper
   Views/
-    Inner/  Home, Interrupt, Result, History, Settings, Paywall
+    Inner/  Home, Interrupt, Result, History, Settings, Paywall, Appearance
     Outer/  TimerFace          (a view, not a scene — RootView presents it)
-    Shared/ RingProgress, DurationPicker, StatRow
+    Shared/ Theme (palettes), Appearance (styles, look, custom colours),
+            RingProgress, DurationPicker
   Store/
     Entitlements.swift         StoreKit 2, one non-consumable
 ```
@@ -226,10 +227,13 @@ One non-consumable, `com.zawmbi.shut.pro`, $4.99, StoreKit 2.
 today's total, current streak, the outer-display timer face.
 
 **Pro:** full history beyond today, week and month totals, session labels,
-custom durations, alternate timer faces (sunburst, digits, bar), the Avocado,
-Atomic and Dusk themes, adjustable grace period, and a forgiving streak (one
-missed day in any seven doesn't reset it). Walnut and the ring face are free, and
-free forgives the first missed day ever, once.
+custom durations, adjustable grace period, a forgiving streak (one missed day in
+any seven doesn't reset it), and everything in the Appearance editor beyond
+Classic: the Technical, Cute, Chic, Cool and Retro styles, every palette and
+fully custom colours, the sunburst, digits, bar, dots and hairline faces, and the clock font,
+clock weight, text face and corner choices. Classic (Walnut, the ring face,
+System text, Rounded bold numerals, soft corners) is free, and free forgives the
+first missed day ever, once.
 
 iCloud sync is **cut, not deferred.** SwiftData's CloudKit container is a
 network call, and "nothing leaves your phone" is the product — both claims
@@ -258,18 +262,36 @@ line from `Views/Shared/Encouragement.swift` — "Past halfway.", "Well kept.",
 no emoji, no exclamation marks, never scolds. Off, the voice above is the whole
 app.
 
-No emoji anywhere in the UI. System font, set heavy and tracked wide; SF Rounded
-for timer numerals only.
+No emoji anywhere in the UI. Type comes from the chosen look: `Font.plain` names
+no design so the root `.fontDesign` applies, and timer numerals go through
+`.numeralFont(_:)`. Never name a font design or a corner radius in a view.
 
 ## Look
 
-Mid-century modern, kept clean: warm paper grounds, flat blocks of colour, 6pt
-corners, no gradients, no shadows. Circles and half discs are the only
-decorative shapes (`FoldMark`, the home card). Colours come from the
-`\.palette` environment value, which `RootView` sets from the chosen theme —
-never hard-code a colour in a view. Each theme has an inner palette and a
-cover-display palette, and the cover face is always dark. `secondary` and
-`tertiary` are for shapes only; small text in the accent hue uses `primaryText`.
+Classic is the house style, and the default: mid-century modern, kept clean —
+warm paper grounds, flat blocks of colour, 6pt corners, no gradients, no
+shadows. Circles and half discs are the only decorative shapes (`FoldMark`, the
+home card), in every style.
+
+**Appearance is customisable, lock-screen style** (`Views/Inner/AppearanceView`):
+a live preview, a row of styles (`StyleID` — Classic, Technical, Cute, Chic,
+Cool, Retro), then one component at a time: clock font and weight, timer face,
+colours, backgrounds, text face, corners. A style is only a starting set of
+components; every one can be changed after.
+
+- Colours come from `\.palette`, type and shape from `\.look`. `RootView` sets
+  both from defaults through `Appearance`, which applies the refund rule —
+  anything Pro falls back to Classic. Never hard-code a colour, font design or
+  corner radius in a view.
+- Each built-in theme has an inner palette and a cover-display palette, and its
+  cover face is always dark. `AppearanceTests` holds every built-in palette to
+  readable contrast; a new theme must pass it.
+- Custom colours store seven picks (`CustomColors`); every other role is
+  derived, and the text roles are derived to stay readable whatever is picked.
+  A custom timer background may be light — that is the person's choice.
+- `secondary` and `tertiary` are for shapes only; small text in the accent hue
+  uses `primaryText`.
+- The editor shows Pro options to free users, locked. It never opens the paywall.
 
 ---
 

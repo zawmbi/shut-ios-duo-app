@@ -4,14 +4,15 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(Entitlements.self) private var pro
     @Environment(\.palette) private var palette
+    @Environment(\.look) private var look
 
     private let features = [
         ("Full history", "Every block you've kept, not just today's."),
         ("Weeks and months", "Totals and trends over time."),
         ("Labels", "Tag a block so you know what it went to."),
         ("Custom lengths", "Any duration, not just the presets."),
-        ("Faces", "Sunburst, digits and bar, as well as the ring."),
-        ("Themes", "Avocado, Atomic and Dusk, as well as Walnut."),
+        ("Styles", "Technical, Cute, Chic, Cool and Retro, as well as Classic."),
+        ("Make it yours", "Every colour, the clock's font and weight, the timer face, text and corners."),
         ("Grace period", "Set how long you get before a block breaks."),
         ("Forgiving streak", "One missed day a week doesn't reset it. Free forgives the first one.")
     ]
@@ -53,6 +54,7 @@ struct PaywallView: View {
                     }
                 }
                 .padding(24)
+                .readableWidth()
             }
             .paperBackground()
             .safeAreaInset(edge: .bottom) {
@@ -67,7 +69,7 @@ struct PaywallView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
                             .background(palette.primary)
-                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: look.corners.radius, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .disabled(pro.purchasing || pro.product == nil)
@@ -77,6 +79,7 @@ struct PaywallView: View {
                         .foregroundStyle(palette.inkSoft)
                 }
                 .padding(.horizontal, 24)
+                .readableWidth()
                 .padding(.bottom, 16)
                 .background(palette.paper)
             }

@@ -1,7 +1,10 @@
 import Foundation
 import Observation
+import OSLog
 import SwiftUI
 import UIKit
+
+private let log = Logger(subsystem: "com.zawmbi.shut", category: "posture")
 
 /// The only hardware-aware type in the app.
 ///
@@ -170,6 +173,7 @@ final class HingeMonitor {
         guard awaySince == nil else { return }
         awaySince = now()
         awayResolved = false
+        log.info("background: waiting for a lock (passcode known: \(self.hasPasscode))")
         backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "shut.lock-window") { [weak self] in
             MainActor.assumeIsolated { self?.resolveAway(sawLock: false) }
         }
@@ -200,6 +204,8 @@ final class HingeMonitor {
         guard let since = awaySince, !awayResolved else { return }
         awayResolved = true
         lockWindowTask?.cancel()
+        let decision = sawLock ? "locked" : (hasPasscode ? "left the app" : "no passcode known, counted as locked")
+        log.info("resolved: \(decision, privacy: .public) after \(self.now().timeIntervalSince(since), format: .fixed(precision: 1))s")
 
         if sawLock || !hasPasscode {
             if !isFoldable { emit(.closed, at: since) }
@@ -212,6 +218,7 @@ final class HingeMonitor {
         defer { awaySince = nil }
         if let since = awaySince, !awayResolved {
             if now().timeIntervalSince(since) < Self.transientAway {
+                log.info("back after a blip; nothing decided")
                 awayResolved = true
                 lockWindowTask?.cancel()
                 endBackgroundTask()
@@ -232,6 +239,7 @@ final class HingeMonitor {
     }
 
     private func emit(_ posture: Posture, at date: Date) {
+        log.info("posture \(String(describing: posture), privacy: .public) at \(date.formatted(date: .omitted, time: .standard), privacy: .public)")
         self.posture = posture
         onPosture?(posture, date)
     }

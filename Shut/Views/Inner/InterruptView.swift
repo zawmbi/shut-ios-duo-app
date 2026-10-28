@@ -8,6 +8,7 @@ struct InterruptView: View {
     @Environment(HingeMonitor.self) private var hinge
     @Environment(SessionClock.self) private var clock
     @Environment(\.palette) private var palette
+    @Environment(\.look) private var look
     @AppStorage(PrefKey.encouragement) private var encourage = false
 
     var body: some View {
@@ -28,7 +29,7 @@ struct InterruptView: View {
                 .frame(width: 240, height: 240)
 
                 Text(Stats.clock(engine.graceRemaining))
-                    .font(.numerals(64, .heavy))
+                    .numeralFont(64)
                     .foregroundStyle(palette.ink)
                     .monospacedDigit()
                     .contentTransition(.numericText())
@@ -73,7 +74,7 @@ struct InterruptView: View {
                 .padding(.vertical, 14)
                 .padding(.horizontal, 32)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: look.corners.radius, style: .continuous)
                         .stroke(palette.ink, lineWidth: 2)
                 )
                 .buttonStyle(.plain)

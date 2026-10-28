@@ -5,6 +5,7 @@ struct DurationPicker: View {
 
     @Environment(Entitlements.self) private var pro
     @Environment(\.palette) private var palette
+    @Environment(\.look) private var look
     @AppStorage(PrefKey.customTarget) private var customTarget: Int = 0
 
     @State private var showCustom = false
@@ -55,7 +56,7 @@ struct DurationPicker: View {
                 .padding(.vertical, 16)
                 .background(selected ? palette.primary : palette.panel)
                 .foregroundStyle(selected ? palette.onPrimary : (locked ? palette.inkSoft : palette.ink))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: look.corners.radius, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -115,7 +116,7 @@ private struct CustomDurationSheet: View {
                 .frame(maxHeight: 180)
 
                 Text(total == 0 ? "At least one minute." : Presets.label(total))
-                    .font(.rounded(.body, .semibold))
+                    .font(.plain(.body, .semibold))
                     .foregroundStyle(total == 0 ? palette.inkSoft : palette.ink)
                     .monospacedDigit()
 

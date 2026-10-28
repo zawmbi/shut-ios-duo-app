@@ -6,6 +6,7 @@ struct HomeView: View {
     @Environment(HingeMonitor.self) private var hinge
     @Environment(Entitlements.self) private var pro
     @Environment(\.palette) private var palette
+    @Environment(\.look) private var look
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
 
     @AppStorage(PrefKey.lastTarget) private var lastTarget: Int = 25 * 60
@@ -33,12 +34,17 @@ struct HomeView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 20)
+        .readableWidth()
         .paperBackground()
         .onAppear {
             // A custom length left over from a refunded Pro falls back to the
             // default, the same rule themes and faces follow.
             if !pro.isPro && !Presets.all.contains(lastTarget) { lastTarget = 25 * 60 }
             engine.arm(target: lastTarget)
+            #if DEBUG
+            if ScreenshotStage.current == .history { showHistory = true }
+            if ScreenshotStage.current == .settings { showSettings = true }
+            #endif
         }
         .onChange(of: lastTarget) { _, new in engine.arm(target: new) }
         .sheet(isPresented: $showHistory) { HistoryView() }
@@ -94,7 +100,7 @@ struct HomeView: View {
             }
             .accessibilityHidden(true)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: look.corners.radius, style: .continuous))
     }
 
     private var subtitle: String {
@@ -132,6 +138,7 @@ struct HomeView: View {
                     HStack(spacing: 6) {
                         Text("History")
                             .font(.plain(.subheadline, .bold))
+                            .fixedSize()
                         Image(systemName: "arrow.right")
                             .font(.plain(.subheadline, .bold))
                     }
@@ -161,6 +168,10 @@ struct HomeView: View {
                 .font(.plain(.title2, .heavy))
                 .foregroundStyle(palette.ink)
                 .monospacedDigit()
+                // The cover display is narrow and gives its trailing edge to
+                // the status bar; a figure shrinks before it wraps.
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
     }
 }

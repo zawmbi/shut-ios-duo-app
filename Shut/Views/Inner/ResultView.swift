@@ -6,6 +6,7 @@ struct ResultView: View {
     @Environment(Entitlements.self) private var pro
     @Environment(\.modelContext) private var context
     @Environment(\.palette) private var palette
+    @Environment(\.look) private var look
     @AppStorage(PrefKey.encouragement) private var encourage = false
 
     @State private var label: String = ""
@@ -35,7 +36,7 @@ struct ResultView: View {
             Text(kept ? "Kept" : "Broken").labelStyle()
 
             Text(Stats.format(session?.elapsed ?? 0))
-                .font(.numerals(64, .heavy))
+                .numeralFont(64)
                 .foregroundStyle(kept ? palette.primaryText : palette.ink)
                 .padding(.top, 4)
                 // The "Kept"/"Broken" line above already says the outcome, so
@@ -87,12 +88,13 @@ struct ResultView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
             .background(palette.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: look.corners.radius, style: .continuous))
             .buttonStyle(.plain)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .readableWidth()
+        .frame(maxHeight: .infinity)
         .paperBackground()
         .onAppear { label = session?.label ?? "" }
     }
@@ -114,7 +116,7 @@ struct ResultView: View {
             .padding(.vertical, 10)
             .padding(.horizontal, 18)
             .background(palette.panel)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: look.corners.radius, style: .continuous))
             .padding(.top, 24)
             .padding(.horizontal, 40)
             .accessibilityLabel("Label for this block")

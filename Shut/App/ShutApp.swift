@@ -13,7 +13,11 @@ struct ShutApp: App {
 
     init() {
         let schema = Schema([Session.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        var inMemory = false
+        #if DEBUG
+        inMemory = ScreenshotStage.current != nil
+        #endif
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
         do {
             container = try ModelContainer(for: schema, configurations: [config])
         } catch {
@@ -22,16 +26,22 @@ struct ShutApp: App {
         // Configured here, before any view exists, so a block the last process
         // left in flight is restored before Home can arm a new one over it.
         let engine = SessionEngine()
-        engine.configure(context: container.mainContext)
+        let hinge = HingeMonitor()
         _engine = State(initialValue: engine)
+        _hinge = State(initialValue: hinge)
+        #if DEBUG
+        if let stage = ScreenshotStage.current {
+            stage.stage(engine, in: container.mainContext)
+            return
+        }
+        #endif
+        engine.configure(context: container.mainContext)
 
         // Wired before the first view too: the hinge reports once on appear, and
         // that first reading — a phone already shut — must not be dropped.
-        let hinge = HingeMonitor()
         hinge.onPosture = { [engine] posture, date in
             engine.handle(posture: posture, at: date)
         }
-        _hinge = State(initialValue: hinge)
         UNUserNotificationCenter.current().delegate = ForegroundNotifications.shared
     }
 
@@ -43,6 +53,7 @@ struct ShutApp: App {
                 .environment(clock)
                 .environment(pro)
                 .task {
+                    if isStaged { return }
                     _ = try? await UNUserNotificationCenter.current()
                         .requestAuthorization(options: [.alert, .sound])
                     await pro.load()
@@ -67,6 +78,18 @@ struct ShutApp: App {
         //  Plan B (local notifications, no live face) is NOT needed. See
         //  FINDINGS.md §2 for the measurements.
         // ─────────────────────────────────────────────────────────────────────
+    }
+}
+
+extension ShutApp {
+    /// A staged screenshot launch asks for nothing — no permission prompt over
+    /// the capture — and keeps Pro as the launch arguments set it.
+    private var isStaged: Bool {
+        #if DEBUG
+        ScreenshotStage.current != nil
+        #else
+        false
+        #endif
     }
 }
 

@@ -35,6 +35,11 @@ final class Entitlements {
     var priceText: String { product?.displayPrice ?? "$4.99" }
 
     func load() async {
+        #if DEBUG
+        // A staged screenshot keeps Pro as its launch arguments set it, and
+        // shows no price.
+        if ScreenshotStage.current != nil { return }
+        #endif
         await refresh()
         do {
             product = try await Product.products(for: [Self.proID]).first

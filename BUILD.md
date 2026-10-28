@@ -151,7 +151,7 @@ The fold copy below waits for v1.1.
 >   analytics. Your blocks never leave the phone.
 >
 > Shut Pro, one payment: full history, weekly and monthly totals, labels, custom
-> lengths, extra timer faces and themes, a forgiving streak, and an adjustable
+> lengths, six styles with your own colours, fonts and timer faces, a forgiving streak, and an adjustable
 > grace period.
 
 Telling "locked" from "left the app" needs a device passcode. Without one, iOS
@@ -195,7 +195,7 @@ Kept, History, the privacy card.
 >   analytics. Your blocks never leave the phone.
 >
 > Shut Pro, one payment: full history, weekly and monthly totals, labels, custom
-> lengths, extra timer faces and themes, a forgiving streak, and an adjustable
+> lengths, six styles with your own colours, fonts and timer faces, a forgiving streak, and an adjustable
 > grace period.
 
 **Category** — Productivity (primary), Health & Fitness (secondary)

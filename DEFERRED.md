@@ -26,6 +26,11 @@ Things deliberately cut from v1. Add to this list rather than expanding scope.
   explains itself; a first-run flow can wait.
 - ~~**Custom durations.**~~ **Built.** A Custom cell in the duration grid opens
   an hours/minutes sheet for Pro; free taps it and gets the paywall.
+- **iPad — built, not switched on.** Every screen holds a readable width and
+  the timer face scales up, and `capture.sh` takes the 13" set. v1.0 ships
+  iPhone-only on purpose. To ship iPad: set `TARGETED_DEVICE_FAMILY = "1,2"` on
+  the app target (the iPad orientations are already in the project), check
+  Settings ▸ Appearance and split-screen by hand, upload `iPad-13in`.
 - **Sound selection.** One sound, on or off.
 - **Localisation.** English only.
 
